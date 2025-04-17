@@ -29,12 +29,7 @@ const agentSchema = new mongoose.Schema(
       type: String, //cloudnary url
       required: true,
     },
-    clientassigned: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Client",
-      },
-    ],
+    loanassigned: [{ type: Schema.Types.ObjectId, ref: "Loan" }],
 
     password: {
       type: String,
@@ -50,14 +45,36 @@ const agentSchema = new mongoose.Schema(
   }
 );
 
+agentSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bycrypt.hash(this.password, 10);
+  next();
+});
 
-agentSchema.pre("save" , async function(next){
-    if (!this.isModified("password"))return next();
-    this.password.hash = await bycrypt.hash(this.password , 10)
-    next()
-})
+agentSchema.methods.isPasswordCorrect = async function (password) {
+  return await bycrypt.compare(password, this.password);
+};
 
-agentSchema.methods.isPasswordCorrect = async function(password){
-   return await bycrypt.compare(password , this.password.hash)
-}
+agentSchema.methods.generateAccessToken = async function () {
+  return await jwt.sign(
+    {
+      _id: this._id,
+      email: this.email,
+      clientusername: this.clientusername,
+      Fullname: this.Fullname,
+      phonenumber: this.phonenumber,
+    }, // payload
+    process.env.ACCESS_TOKEN_SECRET, // access token secret
+    { expiresIn: process.env.ACCESS_TOKEN_EXPIRY } //expiry token object from process.env
+  );
+};
+agentSchema.methods.generateRefreshToken = async function () {
+  return await jwt.sign(
+    {
+      _id: this._id,
+    }, // payload
+    process.env.REFRESH_TOKEN_SECRET, // REFRESH token secret
+    { expiresIn: process.env.REFRESH_TOKEN_EXPIRY } //expiry token object from process.env
+  );
+};
 export const Agent = mongoose.model("Agent", agentSchema);
