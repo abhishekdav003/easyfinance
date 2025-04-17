@@ -1,0 +1,2 @@
+# backend of the finance app for easy finance company 
+16-04-25 started with the client requirement discussion round , setting up the project frontend and backend structure , requirement analysis and feasibility check round 
