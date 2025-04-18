@@ -25,9 +25,9 @@ console.log('response', agent);
     if (!agent) return res.status(404).json({ message: "Agent not found" });
 
     // Compare the password with the stored hashed password
-    // const isMatch = await bcrypt.compare(password, agent.password);
-    // if (!isMatch)
-    //   return res.status(401).json({ message: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, agent.password);
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid credentials" });
 
     // Generate access token
     const accessToken = jwt.sign(

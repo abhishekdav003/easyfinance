@@ -76,34 +76,34 @@ export const addAgent = async (req, res) => {
     req.body;
 
   try {
-    // Check if agent username already exists
+    // Check if agent username or email already exists
     const existingAgent = await Agent.findOne({
       $or: [{ agentusername }, { email }],
     });
-    if (existingAgent)
+    if (existingAgent) {
       return res
         .status(400)
         .json({ message: "Agent username or email already exists" });
+    }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new agent with the provided details
-    const newAgent = await Agent.create({
+    // Create new agent with plain-text password.
+    // The Agent model's pre('save') hook will hash it automatically.
+    const newAgent = new Agent({
       agentusername,
       email,
-      password: hashedPassword,
+      password,
       fullname,
       fathername,
       photo,
     });
+    await newAgent.save();
 
     res.status(201).json({
       message: "Agent added successfully",
       agent: {
         id: newAgent._id,
         agentusername: newAgent.agentusername,
-        email: newAgent.email,
+        email: newAgent.agentusername, // assuming email === agentusername
         fullname: newAgent.fullname,
         fathername: newAgent.fathername,
       },
