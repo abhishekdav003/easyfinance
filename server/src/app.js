@@ -21,10 +21,10 @@ app.use(cookieParser()); // Parse cookies
 
 
 //import routes-----
-import clientRouter from "./routes/agent.routes.js";
+import agentRoute from "./routes/agent.routes.js";
 import adminRouter from "./routes/admin.routes.js"; //
 // Routes
-app.use("/api/v1/client", clientRouter); // Routes for client-related actions
+app.use("/api/v1/agent", agentRoute); // Routes for client-related actions
 app.use("/api/v1/admin", adminRouter); // Routes for admin-related actions (admin routes)
 
 export default app;
