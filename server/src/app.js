@@ -24,9 +24,9 @@ app.use(cookieParser());
 
 //routes import---------------
 
-import clientRouter from "./routes/client.routes.js";
+import agentRoute from "./routes/agent.routes.js";
 
-app.use("/api/v1/client", clientRouter); // ✅
+app.use("/api/v1/agent", agentRoute); // ✅
 
 
 

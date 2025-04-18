@@ -1,37 +1,72 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
-const loanSchema = new mongoose.Schema({
-  client: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Client",
-    required: true
-  },
-  amount: {
-    type: Number,
-    required: true
-  },
-  interestRate: {
-    type: Number, // e.g., 10 for 10%
-    required: true
-  },
-  durationDays: {
-    type: Number,
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ["active", "inactive"],
-    default: "active"
-  },
-  totalPaid: {
-    type: Number,
-    default: 0
-  },
-  startDate: {
-    type: Date,
-    default: Date.now
-  },
-  endDate: Date,
-}, { timestamps: true });
+const loanSchema = new Schema(
+  {
+    clientName: {
+       type: String, required: true 
+      },
+    clientPhone: {
+       type: String, required: true 
 
-export const Loan = mongoose.model("Loan", loanSchema);
+    },
+    clientAddress: {
+       type: String, required: true 
+
+    },
+
+    uniqueLoanNumber: {
+       type: String, required: true, unique: true 
+
+    },
+    loanAmount: {
+       type: Number, required: true 
+
+    },
+    interestRate: { 
+      type: Number, required: true 
+
+    }, // in %
+    tenureMonths: {
+       type: Number, required: true 
+
+    },
+    emiType: {
+      type: String,
+      enum: ["Monthly", "Weekly", "Full Payment"],
+      required: true,
+    },
+    isFullPayment: {
+       type: Boolean, default: false 
+      
+    },
+
+    startDate: {
+       type: Date, required: true 
+      
+    },
+    dueDate: {
+       type: Date 
+      
+    }, // optional
+    paidAmount: {
+       type: Number, default: 0 
+      
+    },
+    totalPayable: {
+       type: Number 
+      
+    }, // calculated based on interest
+    status: {
+      type: String,
+      enum: ["Ongoing", "Completed", "Defaulted"],
+      default: "Ongoing",
+    },
+
+    agentId: { type: Schema.Types.ObjectId, ref: "Agent" }, // who created it (can be assigned later)
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export default mongoose.model("Loan", loanSchema);

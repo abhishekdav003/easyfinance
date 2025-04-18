@@ -1,8 +1,9 @@
 import mongoose, { Schema } from "mongoose";
-import bycrypt from "bcrypt";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const agentSchema = new mongoose.Schema(
+// --- Agent Schema ---
+const agentSchema = new Schema(
   {
     agentusername: {
       type: String,
@@ -10,7 +11,6 @@ const agentSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true, // remember to use indexing only on the feild tou want to perform search on dont use it everywhere it will degrade performance
     },
     email: {
       type: String,
@@ -19,26 +19,24 @@ const agentSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-    Fullname: {
+    fullname: {
       type: String,
       required: true,
       trim: true,
-      index: true,
     },
     photo: {
-      type: String, //cloudnary url
-      required: true,
+      type: String, // cloudinary or other hosting URL
     },
-    loanassigned: [{ type: Schema.Types.ObjectId, ref: "Loan" }],
-
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: true,
     },
-
     refreshtoken: {
       type: String,
     },
+
+    // Assigned loan references (admin assigned)
+    loanassigned: [{ type: Schema.Types.ObjectId, ref: "Loan" }],
   },
   {
     timestamps: true,
@@ -47,12 +45,12 @@ const agentSchema = new mongoose.Schema(
 
 agentSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  this.password = await bycrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
 agentSchema.methods.isPasswordCorrect = async function (password) {
-  return await bycrypt.compare(password, this.password);
+  return await bcrypt.compare(password, this.password);
 };
 
 agentSchema.methods.generateAccessToken = async function () {
