@@ -13,13 +13,6 @@ const agentSchema = new mongoose.Schema(
       trim: true,
       index: true, // Remember to use indexing only on fields you want to search on
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
     fullname: {
       type: String,
       required: true,
@@ -69,9 +62,8 @@ agentSchema.methods.generateAccessToken = async function () {
   return await jwt.sign(
     {
       _id: this._id,
-      email: this.email,
-      agentusername: this.agentusername, // Corrected variable name, `clientusername` -> `agentusername`
-      fullname: this.fullname, // `Fullname` adjusted to lowercase
+      agentusername: this.agentusername, // Using agentusername as the identifier
+      fullname: this.fullname, // Adjusted to use the fullname
     },
     process.env.ACCESS_TOKEN_SECRET, // Access token secret from environment variables
     { expiresIn: process.env.ACCESS_TOKEN_EXPIRY } // Access token expiry from environment variables
