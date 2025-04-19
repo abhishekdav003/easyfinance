@@ -1,11 +1,12 @@
-class apiResponse {
-    constructor(status, statusCode, data, massage = "success fully fetched") {
-      this.status = status;
-      this.statusCode = statusCode;
-      this.data = data;
-      this.massage = massage;
-    }
+class ApiResponse {
+  constructor(status, statusCode, data, message = "success fully fetched") {
+    this.status = status;
+    this.statusCode = statusCode;
+    this.data = data;
+    this.message = message;
+    this.success = statusCode <400
+    this.success = true
   }
-  
-  export { apiResponse };
-  
+}
+
+export { ApiResponse };

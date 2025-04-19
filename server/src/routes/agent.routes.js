@@ -8,31 +8,30 @@ import {
   getClientDetails,
   getMyCollections,
 } from "../controllers/agent.controller.js";
-import { authenticateAgent } from "../middlewares/authenticateAgent.js"; // Import the new agent auth middleware
+
+
 
 const agentRoute = Router();
-
-// Agent login route (no authentication needed)
 agentRoute.route("/login").post(agentLogin);
 
 // Add a new loan (protected route, requires authentication)
-agentRoute.route("/addloan").post(authenticateAgent, agentAddLoan);
+agentRoute.route("/addloan").post( agentAddLoan);
 
 // Search a customer by their unique loan number (protected route, requires authentication)
 agentRoute
   .route("/loan/:loanNumber")
-  .get(authenticateAgent, searchClientByLoanNumber);
+  .get( searchClientByLoanNumber);
 
 // Record a collection (protected route, requires authentication)
-agentRoute.route("/collectpayment").post(authenticateAgent, collectPayment);
+agentRoute.route("/collectpayment").post( collectPayment);
 
 // Get all clients in the system (protected route, requires authentication)
-agentRoute.route("/clients").get(authenticateAgent, getAllClients);
+agentRoute.route("/clients").get( getAllClients);
 
 // Get single client details by loan ID (protected route, requires authentication)
-agentRoute.route("/client/:id").get(authenticateAgent, getClientDetails);
+agentRoute.route("/client/:id").get( getClientDetails);
 
 // Get all collections made by this agent (protected route, requires authentication)
-agentRoute.route("/collections").get(authenticateAgent, getMyCollections);
+agentRoute.route("/collections").get( getMyCollections);
 
 export default agentRoute;

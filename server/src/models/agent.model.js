@@ -19,6 +19,10 @@ const agentSchema = new mongoose.Schema(
       trim: true,
       index: true, // Indexing on full name for search performance
     },
+    email:{
+      type: String,
+      required: true,
+    },
     fathername: {
       type: String,
       required: true,
@@ -26,7 +30,7 @@ const agentSchema = new mongoose.Schema(
     },
     photo: {
       type: String, // This is a Cloudinary URL or similar for the agent's photo
-      required: true,
+      
     },
     loanassigned: [{ type: Schema.Types.ObjectId, ref: "Loan" }],
     password: {
