@@ -1,9 +1,24 @@
-import React from 'react'
-import "./App.css"
-const App = () => {
-  return (
-    <div>App</div>
-  )
-}
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminRegisterForm from "./components/forms/AdminRegisterForm";
+import PrivateRoute from "./routes/PrivateRoute";
 
-export default App
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<AdminRegisterForm />} />
+        <Route path="/login" element={<AdminLoginPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <AdminDashboard />
+            </PrivateRoute>
+          }
+        />
+      </Routes>
+    </Router>
+  );
+}
