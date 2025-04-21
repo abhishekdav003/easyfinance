@@ -1,12 +1,32 @@
-import bcrypt from "bcrypt";
 import { Admin } from "../models/admin.model.js";
 import { Agent } from "../models/agent.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+
+
+const generateAccessAndRefrshToken = async (adminId) => {
+  try {
+   const admin = await Admin.findById(adminId)
+   const accessToken = admin.generateAccessToken()
+   const refreshToken = admin.generateRefreshToken()
+
+   admin.refreshToken = refreshToken
+   await admin.save({validateBeforeSave: false})
+
+   return {accessToken, refreshToken}
+   
+   
+
+  } catch (error) {
+    throw new ApiError(500, "SOMETHING went wrong while generating refresh and access token");
+  }
+}
+
+
+
 // Register Admin
-// ==========================
 export const registerAdmin = asyncHandler(async (req, res) => {
   const { username, email, password, profileImage } = req.body;
   // if (username || email || password === "") {
@@ -15,13 +35,11 @@ export const registerAdmin = asyncHandler(async (req, res) => {
   if ([username, email, password].some((field) => field?.trim() === "")) {
     throw new ApiError(400, "All Fields are required");
   }
-  // 2. Check if ANY admin already exists (only allow one admin)
   const totalAdmins = await Admin.countDocuments();
   if (totalAdmins > 0) {
     throw new ApiError(403, "Admin already exists. Only one admin is allowed.");
   }
-
-  const profileImagelocalpath = req.files?.profileImage[0]?.path;
+  const profileImagelocalpath =  req.file?.path;
   const profile = await uploadOnCloudinary(profileImagelocalpath);
 
   const admin = await Admin.create({
@@ -41,43 +59,78 @@ export const registerAdmin = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, "Admin created successfully", createdAdmin));
 });
 
-// ==========================
+
 // Login Admin
-// ==========================
 export const adminLogin = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
 
-  // Check if all required fields are provided
   if ((!email && !username) || !password) {
     throw new ApiError(400, "Email/Username and Password are required");
   }
-
-  // Find admin by email or username
-  const admin = await Admin.findOne(email ? { email } : { username });
+  const admin = await Admin.findOne({
+    $or:[{username} , {email}]
+  });
 
   if (!admin) {
-    throw new ApiError(404, "Admin not found");
+    throw new ApiError(404, "Admin does not exist");
   }
-
-  // Compare password
-  const isMatch = await bcrypt.compare(password, admin.password);
+  const isMatch = await admin.isPasswordCorrect(password);
   if (!isMatch) {
     throw new ApiError(401, "Invalid password");
   }
-
-  // Create response object without password
-  const { password: _, refreshToken, ...safeAdmin } = admin.toObject();
-  //  password: _ burning password before sending it to frontend
+  
+  const {accessToken, refreshToken} = await generateAccessAndRefrshToken(admin._id)
+  
+ const loggedinAdmin = await Admin.findById(admin._id).select("-password -refreshToken")
+  
+ // cookies only modifiable from server when  we do httpOnly: true, secure: true
+ const options = {
+    httpOnly: true,
+    secure: true,     
+  } 
 
   return res
-    .status(200)
-    .json(new ApiResponse(200, "Admin logged in successfully", safeAdmin));
+  .status(200)
+  .cookie("accessToken", accessToken, options)
+  .cookie("refreshToken", refreshToken, options)
+  .json(
+    new ApiResponse(
+      200,
+      {admin: loggedinAdmin,
+      accessToken,
+      refreshToken}, // here we are handeling the case where admin wants to set his cokkies him self in his local system may be he wants to login from another device
+      "Admin logged in successfully"
+    ));
 });
 
-// ==========================
-// Add Agent
-// ==========================
+// logout admin 
+ export const logoutAdmin = asyncHandler(async (req, res) => {
+  await Admin.findByIdAndUpdate(
+    req.admin._id,
+    {
+      $set:{
+        refreshToken:undefined // removing refresh token from database
+      }
+    },
+    {
+      new: true
+    }
+  )   
+  //clear cookies
+  const options = {
+    httpOnly: true,
+    secure: true,
+  }
+  return res
+  .status(200)
+  .clearCookie("accessToken", options)
+  .clearCookie("refreshToken", options)
+  .json(new ApiResponse(200, "Admin logged out successfully"))
+})
 
+
+
+// Add Agent
 export const addAgent = asyncHandler(async (req, res) => {
   const { fullname, email, agentusername, password, fathername , photo } = req.body;
 console.log("req.body",req.body);

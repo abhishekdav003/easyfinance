@@ -35,6 +35,10 @@ export const agentLogin = asyncHandler(async (req, res) => {
 // Add Loan
 // ==========================
 export const agentAddLoan = asyncHandler(async (req, res) => {
+
+  if (!req.body) {
+    return res.status(401).json({ message: "Agent authentication required" });
+  }
   const {
     clientName,
     clientPhone,
@@ -68,7 +72,7 @@ export const agentAddLoan = asyncHandler(async (req, res) => {
     isFullPayment,
     startDate,
     totalPayable,
-    agentId: req.agent._id,
+    agentId: req.body.id,
   });
 
   const savedLoan = await newLoan.save();

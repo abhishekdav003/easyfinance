@@ -1,33 +1,29 @@
 import jwt from "jsonwebtoken";
+import { ApiError } from "../utils/apiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { Admin } from "../models/admin.model.js";
 
-export const isAdmin = (req, res, next) => {
-  // Retrieve token from the Authorization header
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Unauthorized: No token provided" });
-  }
-
+export const verifyAdminJwt = asyncHandler(async (req, res, next) => {
   try {
-    // Verify the token using the ACCESS_TOKEN_SECRET
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
-    // Check if the decoded token's role is 'admin'
-    if (decoded.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Forbidden: Admin access required" });
+    const token = req.cookies?.accessToken || req.headers["authorization"]?.replace("Bearer ", "");
+  
+     if (!token) {
+      throw new ApiError (401, "Unauthorized request")
     }
-
-    // Attach the user data to the request object to be used in the next middleware or route handler
-    req.user = decoded;
-
-    // Proceed to the next middleware or route handler
-    next();
+    
+     const decodedToken = await jwt.verify(token , process.env.ACCESS_TOKEN_SECRET )
+     console.log(decodedToken);
+  
+     const admin = await Admin.findById(decodedToken?._id).select("-password -refreshtoken")
+     if (!admin) {
+      throw new ApiError (401, "Invalid Access Token")
+    }
+     req.admin = admin // making a new object in req
+     console.log(req.admin);
+     
+     next()
+    
   } catch (error) {
-    // Catch errors like invalid or expired tokens
-    return res
-      .status(401)
-      .json({ message: "Unauthorized: Invalid token", error: error.message });
+    throw new ApiError (401, error.message || "invalid access token")
   }
-};
+})

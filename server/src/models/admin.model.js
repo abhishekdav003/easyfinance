@@ -25,26 +25,23 @@ const adminSchema = new mongoose.Schema({
   };
   
 
-  adminSchema.methods.generateAccessToken = async function () {
-    return await jwt.sign(
+  adminSchema.methods.generateAccessToken =  function () {
+    return jwt.sign(
       {
         _id: this._id,
-        agentusername: this.agentusername, // Using agentusername as the identifier
-        fullname: this.fullname, // Adjusted to use the fullname
+        username: this.username, // fixed property name
+        email: this.email,
       },
-      process.env.ACCESS_TOKEN_SECRET, // Access token secret from environment variables
-      { expiresIn: process.env.ACCESS_TOKEN_EXPIRY } // Access token expiry from environment variables
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1h" }
     );
   };
   
-  // Instance method to generate a refresh token
-  adminSchema.methods.generateRefreshToken = async function () {
-    return await jwt.sign(
-      {
-        _id: this._id,
-      },
-      process.env.REFRESH_TOKEN_SECRET, // Refresh token secret from environment variables
-      { expiresIn: process.env.REFRESH_TOKEN_EXPIRY } // Refresh token expiry from environment variables
+  adminSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+      { _id: this._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d" }
     );
   };
   export const Admin = mongoose.model("Admin", adminSchema);
