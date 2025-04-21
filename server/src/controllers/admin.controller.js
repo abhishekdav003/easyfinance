@@ -193,5 +193,12 @@ console.log(agentId);
    
 })
 
+//show all agent list 
+export const agentList = asyncHandler(async (req, res) => {
+  const agents = await Agent.find();
+  return res.status(200).json(new ApiResponse(200, agents,"Agent list" ));
+})
+
+
 
 // asign loan to customer
