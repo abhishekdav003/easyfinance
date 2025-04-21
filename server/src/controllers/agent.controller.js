@@ -46,7 +46,7 @@ export const agentLogin = asyncHandler(async (req, res) => {
 
 
   const {accessToken, refreshToken} = await generateAccessAndRefrshToken(agent._id)
-  const loggedinAgent = await Agent.findById(agent._id).select("-password -refreshToken")
+  const loggedinAgent = await Agent.findById(agent._id).select("-password -refreshtoken")
   const options = {
     httpOnly: true,
     secure: true,     

@@ -62,8 +62,8 @@ agentSchema.methods.isPasswordCorrect = async function (password) {
 };
 
 // Instance method to generate an access token
-agentSchema.methods.generateAccessToken = async function () {
-  return await jwt.sign(
+agentSchema.methods.generateAccessToken =  function () {
+  return  jwt.sign(
     {
       _id: this._id,
       agentusername: this.agentusername, // Using agentusername as the identifier
@@ -75,8 +75,8 @@ agentSchema.methods.generateAccessToken = async function () {
 };
 
 // Instance method to generate a refresh token
-agentSchema.methods.generateRefreshToken = async function () {
-  return await jwt.sign(
+agentSchema.methods.generateRefreshToken =  function () {
+  return  jwt.sign(
     {
       _id: this._id,
     },
