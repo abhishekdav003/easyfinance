@@ -15,10 +15,10 @@ router.route("/register").post(upload.single("profileImage")  , registerAdmin)
 router.route("/login").post(adminLogin) 
 
 router.route("/addagent").post(upload.single("photo") ,addAgent) 
-router.route("/deleteagent/:agentId").delete(verifyAdminJwt , removeAgent) 
+
 
 
 // secured routes 
 router.route("/logout").post(verifyAdminJwt ,logoutAdmin) 
-
+router.route("/deleteagent/:agentId").delete(verifyAdminJwt , removeAgent) 
 export default router;
