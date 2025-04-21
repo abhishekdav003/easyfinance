@@ -133,8 +133,6 @@ export const adminLogin = asyncHandler(async (req, res) => {
 // Add Agent
 export const addAgent = asyncHandler(async (req, res) => {
   const { fullname, email, agentusername, password, fathername , photo } = req.body;
-console.log("req.body",req.body);
-
   if (
     [fullname, email, agentusername, password].some(
       (field) => field?.trim() === ""
@@ -142,14 +140,16 @@ console.log("req.body",req.body);
   ) {
     throw new ApiError(400, "All Fields are required");
   }
+  
+  // check if agent already exists
   const agentExist = await Agent.findOne({ agentusername });
   if (agentExist) {
     throw new ApiError(400, "Agent already exists");
   }
    
 // agent photo
-const photolocalpath = req.files?.photo[0]?.path;
-  const agentProfile = await uploadOnCloudinary(photolocalpath);
+  const agentProfile = await uploadOnCloudinary(req.file?.path);
+
 
 
 
@@ -161,6 +161,8 @@ const photolocalpath = req.files?.photo[0]?.path;
     fathername,
     photo: agentProfile?.url || "",
   });
+
+
   const createdAgent = await Agent.findById(newAgent._id).select(
     "-password -refreshToken"
   );
@@ -171,3 +173,25 @@ const photolocalpath = req.files?.photo[0]?.path;
     .status(201)
     .json(new ApiResponse(201, "Agent created successfully", createdAgent));
 });
+
+//remove agent
+export const removeAgent = asyncHandler(async (req, res) => {
+   const { agentId } = req.params;
+console.log(agentId);
+
+   const agent = await Agent.findById(agentId);
+   if(!agent){
+    throw new ApiError(404, "Agent not found")
+   }
+  agent.refreshtoken = undefined
+  await agent.save({validateBeforeSave: false})
+  const deletedAgent = await Agent.findByIdAndDelete(agentId);
+
+  return res
+  .status(200)
+  .json(new ApiResponse(200, {} ,  "Agent removed successfully" ))
+   
+})
+
+
+// asign loan to customer
