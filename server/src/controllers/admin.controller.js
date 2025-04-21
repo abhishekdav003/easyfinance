@@ -201,4 +201,4 @@ export const agentList = asyncHandler(async (req, res) => {
 
 
 
-// asign loan to customer
+// assign loan to customer
