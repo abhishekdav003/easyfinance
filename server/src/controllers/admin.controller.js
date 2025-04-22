@@ -308,3 +308,10 @@ export const removeClient = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, {}, "Client removed successfully"));
 })
+
+
+// show all clients
+export const clientList = asyncHandler(async (req, res) => {
+  const clients = await Client.find();
+  return res.status(200).json(new ApiResponse(200, clients, "client list"));
+});
