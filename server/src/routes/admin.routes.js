@@ -6,8 +6,9 @@ import {
   logoutAdmin,
   removeAgent,
   agentList,
-  assignLoan,
-  removeloan
+  addClient,
+  removeClient
+  
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -24,7 +25,7 @@ router.route("/addagent").post(upload.single("photo") ,addAgent)
 // secured routes 
 router.route("/logout").post(verifyAdminJwt ,logoutAdmin) 
 router.route("/deleteagent/:agentId").delete(verifyAdminJwt , removeAgent) 
-router.route("/deleteloan/:loanId").delete(verifyAdminJwt , removeloan) 
+router.route("/deleteclient/:clientId").delete(verifyAdminJwt , removeClient) 
 router.route("/allagents").get(verifyAdminJwt , agentList) 
-router.route("/addloan").post(upload.single("clientPhoto") , verifyAdminJwt , assignLoan) 
+router.route("/addclient").post(upload.single("clientPhoto") , verifyAdminJwt , addClient) 
 export default router;

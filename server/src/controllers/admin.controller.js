@@ -4,7 +4,8 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-import Loan from "../models/loan.model.js";
+import Client from "../models/client.loan.model.js";
+import { v4 as uuidv4 } from 'uuid';
 
 const generateAccessAndRefrshToken = async (adminId) => {
   try {
@@ -173,7 +174,6 @@ export const addAgent = asyncHandler(async (req, res) => {
 //remove agent
 export const removeAgent = asyncHandler(async (req, res) => {
   const { agentId } = req.params;
-  console.log(agentId);
 
   const agent = await Agent.findById(agentId);
   if (!agent) {
@@ -194,121 +194,117 @@ export const agentList = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, agents, "Agent list"));
 });
 
-// assign loan to customer
-export const assignLoan = asyncHandler(async (req, res) => {
-  const calculateDueDate = (startDate, emiType, tenureDays) => {
-    const due = new Date(startDate);
+// add a client
+export const addClient = asyncHandler(async (req, res) => {
+  const { clientName, clientPhone, clientAddress } = req.body;
 
-    switch (emiType) {
-      case "Monthly":
-        // Assuming tenureDays means number of days per month
-        due.setDate(due.getDate() + tenureDays * 1); // 1 period
-        break;
+  // Parse loans from string (FormData sends it as a string)
+  let loans = [];
+  if (req.body.loans) {
+    try {
+      loans = typeof req.body.loans === 'string' ? JSON.parse(req.body.loans) : req.body.loans;
+    } catch (error) {
+      throw new ApiError(400, "Invalid format for loans");
+    }
+  }
 
-      case "Weekly":
-        // Assuming tenureDays means number of days per week
-        due.setDate(due.getDate() + tenureDays * 1); // 1 period
-        break;
+  // 🔍 Check if client already exists
+  const client = await Client.findOne({
+    $or: [{ clientPhone }, { clientName }],
+  });
 
-      case "Full Payment":
-        due.setDate(due.getDate() + tenureDays);
-        break;
+  if (client) {
+    throw new ApiError(400, "Client already exists");
+  }
 
-      default:
-        throw new Error("Invalid EMI type");
+  // 📸 Upload photo to Cloudinary
+  const clientpic = await uploadOnCloudinary(req.file?.path);
+
+  // 🧠 Process each loan
+  const processedLoans = loans.map((loan) => {
+    const {
+      loanAmount,
+      interestRate,
+      tenureDays,
+      tenureMonths,
+      emiType,
+      startDate = new Date()
+    } = loan;
+
+    // 🔁 Convert months to days if emiType is Monthly
+    let totalTenureDays = tenureDays;
+    if (!totalTenureDays && emiType === "Monthly" && tenureMonths) {
+      totalTenureDays = tenureMonths * 30;
     }
 
-    return due;
-  };
-  const {
+    // ✅ Ensure required fields are present
+    if (
+      !loanAmount ||
+      !interestRate ||
+      !totalTenureDays ||
+      !emiType
+    ) {
+      throw new ApiError(400, "Missing required loan fields");
+    }
+
+    const interest = (loanAmount * interestRate) / 100;
+    const disbursedAmount = loanAmount - interest;
+    const totalPayable = loanAmount;
+    const totalAmountLeft = totalPayable;
+    const start = new Date(startDate);
+    const dueDate = new Date(start.getTime() + Number(totalTenureDays) * 24 * 60 * 60 * 1000);
+
+    if (isNaN(dueDate.getTime())) {
+      throw new ApiError(400, "Invalid due date calculated from tenure");
+    }
+
+    return {
+      uniqueLoanNumber: uuidv4(),
+      loanAmount,
+      disbursedAmount,
+      interestRate,
+      tenureDays: totalTenureDays,
+      emiType,
+      totalPayable,
+      totalCollected: 0,
+      totalAmountLeft,
+      startDate: start,
+      dueDate,
+      emiRecords: [],
+      status: "Ongoing",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+  });
+
+  // 🧾 Create client document
+  const newClient = await Client.create({
     clientName,
     clientPhone,
     clientAddress,
-    uniqueLoanNumber,
-    clientPhoto,
-    loanAmount,
-    interestRate,
-    tenureMonths,
-    tenureDays,
-    emiType,
-    
-  } = req.body;
-  const existingLoan = await Loan.findOne({
-    $or: [{ uniqueLoanNumber }, { clientPhone }],
+    clientpic,
+    loans: processedLoans
   });
-  if (existingLoan) {
-    throw new ApiError(409, "Loan already exists");
-  }
 
-  const customerPic = await uploadOnCloudinary(req.file?.path);
-  // Interest calculation
-  const loanAmountNum = Number(loanAmount);
-const interestRateNum = Number(interestRate);
-const tenureMonthsNum = Number(tenureMonths) || 0; // default to 0 if undefined
-const tenureDaysNum = Number(tenureDays) || 0; // default to 0 if undefined
-
-let interestAmount = 0;
-// interest calculation logic
-switch (emiType) {
-  case "Monthly":
-    // Monthly interest, convert months to years
-    interestAmount = (loanAmountNum * interestRateNum * (tenureMonthsNum / 12)) / 100;
-    break;
-
-  case "Weekly":
-  case "Full Payment":
-    // Weekly or Full: treat tenure in days → convert to years
-    interestAmount = (loanAmountNum * interestRateNum * (tenureDaysNum / 365)) / 100;
-    break;
-
-  case "Daily":
-    // Tenure is in days, so same formula
-    interestAmount = (loanAmountNum * interestRateNum * (tenureDaysNum / 365)) / 100;
-    break;
-
-  default:
-    throw new ApiError(400, "Invalid EMI type");
-}
-
-const totalPayable = loanAmountNum + interestAmount;
-
-
-  //due date calculation
-  const startDate = new Date(); // or req.body.startDate if admin inputs it
-  const dueDate = calculateDueDate(startDate, emiType, tenureDays);
-  const newLoan = await Loan.create({
-    clientName,
-    clientPhone,
-    clientAddress,
-    uniqueLoanNumber,
-    clientPhoto: customerPic?.url || "",
-    loanAmount,
-    interestRate,
-    tenureDays, 
-    emiType,
-    startDate,
-    dueDate,
-    totalPayable
-  });
   return res
-    .status(201)
-    .json(new ApiResponse(200, newLoan, "loan successfully created"));
+  .status(201).json(
+   new ApiResponse (201 , { newClient }, "Client and loan(s) added successfully" )
+  );
 });
 
-//delete existing loan
-export const removeloan = asyncHandler(async(req,res)=>{
-  const {loanId} =req.params
 
-  const loan = Loan.findById(loanId)
-  if (!loan) {
-    throw new ApiError(404, "loan not found");
+//remove a client
+export const removeClient = asyncHandler(async (req, res) => {
+  const { clientId } = req.params;
 
+  const client = await Client.findById(clientId);
+  if (!client) {
+    throw new ApiError(404, "Client not found");
   }
+  
+  await Client.findByIdAndDelete(clientId);
 
-  await Loan.findByIdAndDelete(loanId)
   return res
-  .status(200)
-  .json(new ApiResponse(200, {}, "Loan removed successfully"));
+    .status(200)
+    .json(new ApiResponse(200, {}, "Client removed successfully"));
 })
-
-// update existing loan

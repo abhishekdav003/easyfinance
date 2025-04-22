@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import { Agent } from "../models/agent.model.js";
-import Loan from "../models/loan.model.js";
-import { Collection } from "../models/collection.model.js";
+
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
