@@ -6,21 +6,22 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
 
-
-
-const generateAccessAndRefrshToken = async(agentId) => {
+const generateAccessAndRefrshToken = async (agentId) => {
   try {
-    const agent = await Agent.findById(agentId)
-    const accessToken = agent.generateAccessToken()
-    const refreshToken = agent.generateRefreshToken()
-    agent.refreshtoken = refreshToken
-    await agent.save({validateBeforeSave: false})
-  
-    return {accessToken, refreshToken}
+    const agent = await Agent.findById(agentId);
+    const accessToken = agent.generateAccessToken();
+    const refreshToken = agent.generateRefreshToken();
+    agent.refreshtoken = refreshToken;
+    await agent.save({ validateBeforeSave: false });
+
+    return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(500, "SOMETHING went wrong while generating refresh and access token");
+    throw new ApiError(
+      500,
+      "SOMETHING went wrong while generating refresh and access token"
+    );
   }
-}
+};
 // ==========================
 // Agent Login
 // ==========================
@@ -44,23 +45,51 @@ export const agentLogin = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid password");
   }
 
-
-  const {accessToken, refreshToken} = await generateAccessAndRefrshToken(agent._id)
-  const loggedinAgent = await Agent.findById(agent._id).select("-password -refreshtoken")
+  const { accessToken, refreshToken } = await generateAccessAndRefrshToken(
+    agent._id
+  );
+  const loggedinAgent = await Agent.findById(agent._id).select(
+    "-password -refreshtoken"
+  );
   const options = {
     httpOnly: true,
-    secure: true,     
-  } 
+    secure: true,
+  };
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { agent: loggedinAgent, accessToken, refreshToken }, // here we are handeling the case where admin wants to set his cokkies him self in his local system may be he wants to login from another device
+        "Agent logged in successfully"
+      )
+    );
+});
+
+/// === agent logout
+export const agentLogout = asyncHandler(async (req, res) => {
+  await Agent.findByIdAndUpdate(
+    req.agent._id,
+    {
+      $set: {
+        refreshToken: undefined, // removing refresh token from database
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  const options = {
+    httpOnly:true,
+    secure:true
+  }
+
   return res
   .status(200)
-  .cookie("accessToken", accessToken, options)
-  .cookie("refreshToken", refreshToken, options)
-  .json(new ApiResponse(
-    200,
-    {agent: loggedinAgent,
-    accessToken,
-    refreshToken}, // here we are handeling the case where admin wants to set his cokkies him self in his local system may be he wants to login from another device
-    "Agent logged in successfully"
-  ))
-
+  .clearCookie("accessToken", options)
+  .clearCookie("refreshToken", options)
+  .json(new ApiResponse(200, "agent logged out successfully"))
 });
