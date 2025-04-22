@@ -4,27 +4,25 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-
+import Loan from "../models/loan.model.js";
 
 const generateAccessAndRefrshToken = async (adminId) => {
   try {
-   const admin = await Admin.findById(adminId)
-   const accessToken = admin.generateAccessToken()
-   const refreshToken = admin.generateRefreshToken()
+    const admin = await Admin.findById(adminId);
+    const accessToken = admin.generateAccessToken();
+    const refreshToken = admin.generateRefreshToken();
 
-   admin.refreshToken = refreshToken
-   await admin.save({validateBeforeSave: false})
+    admin.refreshToken = refreshToken;
+    await admin.save({ validateBeforeSave: false });
 
-   return {accessToken, refreshToken}
-   
-   
-
+    return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(500, "SOMETHING went wrong while generating refresh and access token");
+    throw new ApiError(
+      500,
+      "SOMETHING went wrong while generating refresh and access token"
+    );
   }
-}
-
-
+};
 
 // Register Admin
 export const registerAdmin = asyncHandler(async (req, res) => {
@@ -39,7 +37,7 @@ export const registerAdmin = asyncHandler(async (req, res) => {
   if (totalAdmins > 0) {
     throw new ApiError(403, "Admin already exists. Only one admin is allowed.");
   }
-  const profileImagelocalpath =  req.file?.path;
+  const profileImagelocalpath = req.file?.path;
   const profile = await uploadOnCloudinary(profileImagelocalpath);
 
   const admin = await Admin.create({
@@ -59,7 +57,6 @@ export const registerAdmin = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, "Admin created successfully", createdAdmin));
 });
 
-
 // Login Admin
 export const adminLogin = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
@@ -68,7 +65,7 @@ export const adminLogin = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email/Username and Password are required");
   }
   const admin = await Admin.findOne({
-    $or:[{username} , {email}]
+    $or: [{ username }, { email }],
   });
 
   if (!admin) {
@@ -78,61 +75,64 @@ export const adminLogin = asyncHandler(async (req, res) => {
   if (!isMatch) {
     throw new ApiError(401, "Invalid password");
   }
-  
-  const {accessToken, refreshToken} = await generateAccessAndRefrshToken(admin._id)
-  
- const loggedinAdmin = await Admin.findById(admin._id).select("-password -refreshToken")
-  
- // cookies only modifiable from server when  we do httpOnly: true, secure: true
- const options = {
+
+  const { accessToken, refreshToken } = await generateAccessAndRefrshToken(
+    admin._id
+  );
+
+  const loggedinAdmin = await Admin.findById(admin._id).select(
+    "-password -refreshToken"
+  );
+
+  // cookies only modifiable from server when  we do httpOnly: true, secure: true
+  const options = {
     httpOnly: true,
-    secure: true,     
-  } 
+    secure: true,
+  };
 
   return res
-  .status(200)
-  .cookie("accessToken", accessToken, options)
-  .cookie("refreshToken", refreshToken, options)
-  .json(
-    new ApiResponse(
-      200,
-      {admin: loggedinAdmin,
-      accessToken,
-      refreshToken}, // here we are handeling the case where admin wants to set his cokkies him self in his local system may be he wants to login from another device
-      "Admin logged in successfully"
-    ));
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { admin: loggedinAdmin, accessToken, refreshToken }, // here we are handeling the case where admin wants to set his cokkies him self in his local system may be he wants to login from another device
+        "Admin logged in successfully"
+      )
+    );
 });
 
-// logout admin 
- export const logoutAdmin = asyncHandler(async (req, res) => {
+// logout admin
+export const logoutAdmin = asyncHandler(async (req, res) => {
   await Admin.findByIdAndUpdate(
     req.admin._id,
     {
-      $set:{
-        refreshToken:undefined // removing refresh token from database
-      }
+      $set: {
+        refreshToken: undefined, // removing refresh token from database
+      },
     },
     {
-      new: true
+      new: true,
     }
-  )   
+  );
   //clear cookies
   const options = {
     httpOnly: true,
     secure: true,
-  }
+  };
+
   return res
-  .status(200)
-  .clearCookie("accessToken", options)
-  .clearCookie("refreshToken", options)
-  .json(new ApiResponse(200, "Admin logged out successfully"))
-})
-
-
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, "Admin logged out successfully"));
+});
 
 // Add Agent
 export const addAgent = asyncHandler(async (req, res) => {
-  const { fullname, email, agentusername, password, fathername , photo } = req.body;
+  const { fullname, email, agentusername, password, fathername, photo } =
+    req.body;
   if (
     [fullname, email, agentusername, password].some(
       (field) => field?.trim() === ""
@@ -140,18 +140,15 @@ export const addAgent = asyncHandler(async (req, res) => {
   ) {
     throw new ApiError(400, "All Fields are required");
   }
-  
+
   // check if agent already exists
   const agentExist = await Agent.findOne({ agentusername });
   if (agentExist) {
     throw new ApiError(400, "Agent already exists");
   }
-   
-// agent photo
+
+  // agent photo
   const agentProfile = await uploadOnCloudinary(req.file?.path);
-
-
-
 
   const newAgent = await Agent.create({
     fullname,
@@ -161,7 +158,6 @@ export const addAgent = asyncHandler(async (req, res) => {
     fathername,
     photo: agentProfile?.url || "",
   });
-
 
   const createdAgent = await Agent.findById(newAgent._id).select(
     "-password -refreshToken"
@@ -176,29 +172,143 @@ export const addAgent = asyncHandler(async (req, res) => {
 
 //remove agent
 export const removeAgent = asyncHandler(async (req, res) => {
-   const { agentId } = req.params;
-console.log(agentId);
+  const { agentId } = req.params;
+  console.log(agentId);
 
-   const agent = await Agent.findById(agentId);
-   if(!agent){
-    throw new ApiError(404, "Agent not found")
-   }
-  agent.refreshtoken = undefined
-  await agent.save({validateBeforeSave: false})
+  const agent = await Agent.findById(agentId);
+  if (!agent) {
+    throw new ApiError(404, "Agent not found");
+  }
+  agent.refreshtoken = undefined;
+  await agent.save({ validateBeforeSave: false });
   const deletedAgent = await Agent.findByIdAndDelete(agentId);
 
   return res
-  .status(200)
-  .json(new ApiResponse(200, {} ,  "Agent removed successfully" ))
-   
-})
+    .status(200)
+    .json(new ApiResponse(200, {}, "Agent removed successfully"));
+});
 
-//show all agent list 
+//show all agent list
 export const agentList = asyncHandler(async (req, res) => {
   const agents = await Agent.find();
-  return res.status(200).json(new ApiResponse(200, agents,"Agent list" ));
-})
-
-
+  return res.status(200).json(new ApiResponse(200, agents, "Agent list"));
+});
 
 // assign loan to customer
+export const assignLoan = asyncHandler(async (req, res) => {
+  const calculateDueDate = (startDate, emiType, tenureDays) => {
+    const due = new Date(startDate);
+
+    switch (emiType) {
+      case "Monthly":
+        // Assuming tenureDays means number of days per month
+        due.setDate(due.getDate() + tenureDays * 1); // 1 period
+        break;
+
+      case "Weekly":
+        // Assuming tenureDays means number of days per week
+        due.setDate(due.getDate() + tenureDays * 1); // 1 period
+        break;
+
+      case "Full Payment":
+        due.setDate(due.getDate() + tenureDays);
+        break;
+
+      default:
+        throw new Error("Invalid EMI type");
+    }
+
+    return due;
+  };
+  const {
+    clientName,
+    clientPhone,
+    clientAddress,
+    uniqueLoanNumber,
+    clientPhoto,
+    loanAmount,
+    interestRate,
+    tenureMonths,
+    tenureDays,
+    emiType,
+    
+  } = req.body;
+  const existingLoan = await Loan.findOne({
+    $or: [{ uniqueLoanNumber }, { clientPhone }],
+  });
+  if (existingLoan) {
+    throw new ApiError(409, "Loan already exists");
+  }
+
+  const customerPic = await uploadOnCloudinary(req.file?.path);
+  // Interest calculation
+  const loanAmountNum = Number(loanAmount);
+const interestRateNum = Number(interestRate);
+const tenureMonthsNum = Number(tenureMonths) || 0; // default to 0 if undefined
+const tenureDaysNum = Number(tenureDays) || 0; // default to 0 if undefined
+
+let interestAmount = 0;
+// interest calculation logic
+switch (emiType) {
+  case "Monthly":
+    // Monthly interest, convert months to years
+    interestAmount = (loanAmountNum * interestRateNum * (tenureMonthsNum / 12)) / 100;
+    break;
+
+  case "Weekly":
+  case "Full Payment":
+    // Weekly or Full: treat tenure in days → convert to years
+    interestAmount = (loanAmountNum * interestRateNum * (tenureDaysNum / 365)) / 100;
+    break;
+
+  case "Daily":
+    // Tenure is in days, so same formula
+    interestAmount = (loanAmountNum * interestRateNum * (tenureDaysNum / 365)) / 100;
+    break;
+
+  default:
+    throw new ApiError(400, "Invalid EMI type");
+}
+
+const totalPayable = loanAmountNum + interestAmount;
+
+
+  //due date calculation
+  const startDate = new Date(); // or req.body.startDate if admin inputs it
+  const dueDate = calculateDueDate(startDate, emiType, tenureDays);
+  const newLoan = await Loan.create({
+    clientName,
+    clientPhone,
+    clientAddress,
+    uniqueLoanNumber,
+    clientPhoto: customerPic?.url || "",
+    loanAmount,
+    interestRate,
+    tenureDays, 
+    emiType,
+    startDate,
+    dueDate,
+    totalPayable
+  });
+  return res
+    .status(201)
+    .json(new ApiResponse(200, newLoan, "loan successfully created"));
+});
+
+//delete existing loan
+export const removeloan = asyncHandler(async(req,res)=>{
+  const {loanId} =req.params
+
+  const loan = Loan.findById(loanId)
+  if (!loan) {
+    throw new ApiError(404, "loan not found");
+
+  }
+
+  await Loan.findByIdAndDelete(loanId)
+  return res
+  .status(200)
+  .json(new ApiResponse(200, {}, "Loan removed successfully"));
+})
+
+// update existing loan
