@@ -3,6 +3,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRegisterForm from "./components/forms/AdminRegisterForm";
 import PrivateRoute from "./routes/PrivateRoute";
+import "./App.css"
 
 export default function App() {
   return (
