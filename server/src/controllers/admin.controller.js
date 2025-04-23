@@ -312,6 +312,14 @@ export const removeClient = asyncHandler(async (req, res) => {
 
 // show all clients
 export const clientList = asyncHandler(async (req, res) => {
-  const clients = await Client.find();
+  const clients = await Client.find().select("-Loans");
   return res.status(200).json(new ApiResponse(200, clients, "client list"));
+});
+
+//show client details
+export const clientDetails = asyncHandler(async (req, res) => {
+ const {clientId} = req.params
+ const client = await Client.findById(clientId).populate("loans");
+ return res.status(200).json(new ApiResponse(200, client, "client details fetched successfully"));
+
 });

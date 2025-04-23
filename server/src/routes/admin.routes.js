@@ -8,7 +8,8 @@ import {
   agentList,
   addClient,
   removeClient,
-  clientList
+  clientList,
+  clientDetails
   
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
@@ -27,6 +28,7 @@ router.route("/addagent").post(upload.single("photo") ,addAgent)
 router.route("/logout").post(verifyAdminJwt ,logoutAdmin) 
 router.route("/deleteagent/:agentId").delete(verifyAdminJwt , removeAgent) 
 router.route("/deleteclient/:clientId").delete(verifyAdminJwt , removeClient) 
+router.route("/getClientdata/:clientId").get(verifyAdminJwt , clientDetails) 
 router.route("/allagents").get(verifyAdminJwt , agentList) 
 router.route("/allclients").get(verifyAdminJwt , clientList) 
 router.route("/addclient").post(upload.single("clientPhoto") , verifyAdminJwt , addClient) 
