@@ -19,7 +19,7 @@ const loanSchema = new mongoose.Schema({
   loanAmount: { type: Number, required: true },
   disbursedAmount: { type: Number }, // after interest deduction
   interestRate: { type: Number, required: true },
-  tenureDays: { type: Number, required: true },
+  tenureDays: { type: Number,  },
   tenureMonths: { type: Number},
   emiType: { type: String, enum: ["Daily", "Weekly", "Monthly", "Full Payment"], required: true },
   totalPayable: { type: Number, required: true },

@@ -9,7 +9,10 @@ import {
   addClient,
   removeClient,
   clientList,
-  clientDetails
+  clientDetails,
+  addLoanToClient,
+  removeLoanFromClient,
+  getAdminDashboardAnalytics
   
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
@@ -26,10 +29,13 @@ router.route("/addagent").post(upload.single("photo") ,addAgent)
 
 // secured routes 
 router.route("/logout").post(verifyAdminJwt ,logoutAdmin) 
+router.route("/addloantoclient/:clientId").post(verifyAdminJwt ,addLoanToClient) 
 router.route("/deleteagent/:agentId").delete(verifyAdminJwt , removeAgent) 
 router.route("/deleteclient/:clientId").delete(verifyAdminJwt , removeClient) 
+router.route("/removeloan/:clientId/loans/:loanId").delete(verifyAdminJwt , removeLoanFromClient) 
 router.route("/getClientdata/:clientId").get(verifyAdminJwt , clientDetails) 
 router.route("/allagents").get(verifyAdminJwt , agentList) 
 router.route("/allclients").get(verifyAdminJwt , clientList) 
+router.route("/dashboard").get(verifyAdminJwt , getAdminDashboardAnalytics) 
 router.route("/addclient").post(upload.single("clientPhoto") , verifyAdminJwt , addClient) 
 export default router;

@@ -310,16 +310,142 @@ export const removeClient = asyncHandler(async (req, res) => {
 })
 
 
-// show all clients
+// show all clients with loans removed
 export const clientList = asyncHandler(async (req, res) => {
-  const clients = await Client.find().select("-Loans");
+  const clients = await Client.find().select("-loans");
   return res.status(200).json(new ApiResponse(200, clients, "client list"));
 });
 
-//show client details
+//show client details with all details 
 export const clientDetails = asyncHandler(async (req, res) => {
  const {clientId} = req.params
  const client = await Client.findById(clientId).populate("loans");
  return res.status(200).json(new ApiResponse(200, client, "client details fetched successfully"));
 
+});
+
+//add new loan object to the client array to client 
+export const addLoanToClient = asyncHandler(async (req, res) => {
+  const { clientId } = req.params;
+  const {
+    loanAmount,
+    interestRate,
+    tenureDays,
+    tenureMonths,
+    emiType,
+    startDate : rawStartDate
+  } = req.body;
+
+  const start = rawStartDate ? new Date(rawStartDate) : new Date();
+
+  const client = await Client.findById(clientId);
+  if (!client) {
+    throw new ApiError(404, "Client not found");
+  }
+  let dueDate;
+
+  if (tenureDays) {
+    dueDate = new Date(start.getTime() + Number(tenureDays) * 24 * 60 * 60 * 1000);
+  } else if (tenureMonths) {
+    dueDate = new Date(start);
+    dueDate.setMonth(dueDate.getMonth() + Number(tenureMonths));
+  } else {
+    throw new ApiError(400, "Either tenureDays or tenureMonths must be provided");
+  }
+
+  if (isNaN(dueDate.getTime())) {
+    throw new ApiError(400, "Invalid due date calculated from tenure");
+  }
+
+  const interest = (loanAmount * interestRate) / 100;
+  const disbursedAmount = loanAmount - interest;
+
+  const newLoan = {
+    uniqueLoanNumber: uuidv4(),
+    loanAmount,
+    disbursedAmount,
+    interestRate,
+    tenureDays: tenureDays || null,
+    tenureMonths: tenureMonths || null,
+    emiType,
+    totalPayable: loanAmount,
+    totalCollected: 0,
+    totalAmountLeft: loanAmount,
+    startDate: start,
+    dueDate,
+    emiRecords: [],
+    status: "Ongoing",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  client.loans.push(newLoan);
+  await client.save();
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, client, "Loan added to client successfully"));
+});
+
+//remove loan once completed
+export const removeLoanFromClient = asyncHandler(async (req, res) => {
+  const { clientId, loanId } = req.params;
+console.log(clientId , loanId);
+
+  const client = await Client.findById(clientId);
+  const loanExists = client.loans.id(loanId);
+
+  if (!loanExists) {
+    throw new ApiError(404, "Loan not found");
+  }
+
+  if (!client) {
+    throw new ApiError(404, "Client not found");
+  }
+  
+  client.loans.pull(loanId);
+  await client.save();
+  return res
+    .status(200)
+    .json(new ApiResponse(200, client, "Loan removed from client successfully"));
+
+})
+
+
+// get analatics admin view 
+export const getAdminDashboardAnalytics = asyncHandler(async (req, res) => {
+  const clients = await Client.find();
+
+  let totalLoanDisbursed = 0;
+  let totalAmountRecovered = 0;
+  let totalAmountRemaining = 0;
+  let totalEmisCollected = 0;
+  let defaulterCount = 0;
+
+  clients.forEach(client => {
+    client.loans.forEach(loan => {
+      totalLoanDisbursed += loan.loanAmount;
+      totalAmountRemaining += loan.totalAmountLeft;
+
+      loan.emiRecords.forEach(emi => {
+        totalEmisCollected += 1;
+
+        if (emi.status === "Paid") {
+          totalAmountRecovered += emi.amountCollected;
+        } else if (emi.status === "Defaulted") {
+          defaulterCount += 1;
+        }
+      });
+    });
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, {
+      totalLoanDisbursed,
+      totalAmountRecovered,
+      totalAmountRemaining,
+      totalEmisCollected,
+      defaulterCount,
+    }, "Admin dashboard analytics fetched successfully")
+  );
 });

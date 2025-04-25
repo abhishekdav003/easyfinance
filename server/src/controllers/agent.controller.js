@@ -1,9 +1,11 @@
 import jwt from "jsonwebtoken";
 import { Agent } from "../models/agent.model.js";
-
+import Client  from "../models/client.loan.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { ApiError } from "../utils/apiError.js";
+import twilio from "twilio";
+import isSameDay from 'date-fns/isSameDay';
 
 const generateAccessAndRefrshToken = async (agentId) => {
   try {
@@ -82,13 +84,66 @@ export const agentLogout = asyncHandler(async (req, res) => {
   );
 
   const options = {
-    httpOnly:true,
-    secure:true
-  }
+    httpOnly: true,
+    secure: true,
+  };
 
   return res
-  .status(200)
-  .clearCookie("accessToken", options)
-  .clearCookie("refreshToken", options)
-  .json(new ApiResponse(200, "agent logged out successfully"))
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, "agent logged out successfully"));
+});
+
+//emi coleection
+
+const clientTwilio = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM
+const toAdminNumber = process.env.ADMIN_WHATSAPP_TO
+export const collectEMI = asyncHandler(async (req, res) => {
+  const { clientId, loanId } = req.params;
+  const { amountCollected, status, location } = req.body;
+  const agentId = req.agent._id;
+
+  const client = await Client.findById(clientId);
+  if (!client) throw new ApiError(404, "Client not found");
+
+  const loan = client.loans.id(loanId);
+  if (!loan) throw new ApiError(404, "Loan not found");
+
+  // ✅ Check if EMI already collected today
+  const today = new Date();
+  const alreadyCollectedToday = loan.emiRecords.some(record =>
+    isSameDay(new Date(record.date), today)
+  );
+
+  if (alreadyCollectedToday) {
+    throw new ApiError(400, "EMI already collected for today.");
+  }
+
+  const emiEntry = {
+    date: today,
+    amountCollected,
+    status,
+    collectedBy: agentId,
+    location,
+  };
+
+  loan.emiRecords.push(emiEntry);
+  loan.totalCollected += amountCollected;
+  loan.totalAmountLeft -= amountCollected;
+  loan.updatedAt = new Date();
+  await client.save();
+
+  const agent = await Agent.findById(agentId);
+
+  const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${location.address}\n🙋‍♂️ *Collected By:* ${agent.fullname}`;
+
+  await clientTwilio.messages.create({
+    from: fromWhatsAppNumber,
+    to: toAdminNumber,
+    body: messageBody,
+  });
+
+  res.status(200).json(new ApiResponse(200, client, "EMI collected and recorded successfully"));
 });
