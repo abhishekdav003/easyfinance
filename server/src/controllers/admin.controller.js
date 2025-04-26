@@ -5,7 +5,7 @@ import { ApiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import Client from "../models/client.loan.model.js";
-import Loan from "../models/loan.model.js";
+import { Loan } from "../models/client.loan.model.js";
 import { v4 as uuidv4 } from 'uuid';
 
 const generateAccessAndRefrshToken = async (adminId) => {

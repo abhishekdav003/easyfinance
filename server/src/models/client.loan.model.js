@@ -46,3 +46,7 @@ const clientSchema = new mongoose.Schema({
 const Client = mongoose.model("Client", clientSchema);
 
 export default Client;
+
+
+const Loan = mongoose.model("Loan", loanSchema);
+export { Loan };
