@@ -5,9 +5,20 @@ import {
   PieChart as PieChartIcon, BarChart as BarChartIcon, LogOut, 
   Search, Trash2, User, AlertTriangle, Loader
 } from 'lucide-react';
-import { getAllAgents, deleteAgent, registerAgent } from "../services/api";
+import { getAllAgents, deleteAgent, registerAgent, registerClient , getAllClients } from "../services/api";
 import { useNavigate } from "react-router-dom";
 
+import axios from "axios";
+
+
+const ClientManager = () => {
+  const [showForm, setShowForm] = useState(false);
+
+  const handleClientAdded = () => {
+    setShowForm(false); // hide form after submission
+    // Optionally refresh client list or show a toast
+  };
+}
 // AgentRegisterForm Component
 const AgentRegisterForm = ({ onAgentAdded }) => {
   const [formData, setFormData] = useState({
@@ -183,7 +194,7 @@ const Dashboard = () => {
       try {
         setLoading(true);
         const analyticsResponse = await fetch('/api/admin/dashboard-analytics');
-        const clientsResponse = await fetch('/api/admin/clients');
+        const clientsResponse = await fetch('/api/admin/allclients');
         
         // Use your API service for fetching agents
         const agentsResponse = await getAllAgents();
@@ -206,6 +217,8 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
+    fetchAgents();
+    fetchClients();
   }, []);
 
   const handleLogout = async () => {
@@ -249,6 +262,18 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Failed to fetch agents:", error);
       alert(`Error fetching agents: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllClients();
+      setClients(response.data);
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+      alert(`Error fetching clients: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
@@ -549,10 +574,11 @@ const Dashboard = () => {
             <div className="p-6">
               <div className="mb-6 flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Client List</h3>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors">
+                <button onClick={() => setShowForm(true)} className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors">
                   <UserPlus className="w-4 h-4 mr-2" />
                   Add Client
                 </button>
+                
               </div>
               <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className="overflow-x-auto">

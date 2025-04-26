@@ -31,6 +31,7 @@ export const loginAdmin = (data) => {
 
 // Agent APIs
 export const registerAgent = (data) => API.post("/admin/addagent", data);
+export const registerClient = (data) => API.post("/admin/allclients", data);
 
 // ✅ Get all agents with JWT token in the Authorization header
 export const getAllAgents = async () => {
@@ -44,6 +45,18 @@ export const getAllAgents = async () => {
     throw error;
   }
 };
+export const getAllClients = async () => {
+  try {
+    const response = await API.get("/admin/allclients", {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching clients:", error);
+    throw error;
+  }
+};
+
 
 
 
