@@ -310,6 +310,21 @@ export const removeClient = asyncHandler(async (req, res) => {
 })
 
 
+// get a agent details 
+export const agentDetails = asyncHandler(async (req, res) => {
+  const { agentId } = req.params;
+
+  const agent = await Agent.findById(agentId);
+  if (!agent) {
+    throw new ApiError(404, "Agent not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, agent, "Agent details fetched successfully"));
+})
+
+
 // show all clients with loans removed
 export const clientList = asyncHandler(async (req, res) => {
   const clients = await Client.find().select("-loans");

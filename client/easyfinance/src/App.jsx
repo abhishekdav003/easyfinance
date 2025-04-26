@@ -4,6 +4,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminRegisterForm from "./components/forms/AdminRegisterForm";
 import PrivateRoute from "./routes/PrivateRoute";
 import "./App.css"
+import AddClientForm from "./components/forms/ClientRegistration";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           element={
             <PrivateRoute>
               <AdminDashboard />
+              
             </PrivateRoute>
           }
         />

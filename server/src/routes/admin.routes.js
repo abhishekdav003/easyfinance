@@ -12,7 +12,8 @@ import {
   clientDetails,
   addLoanToClient,
   removeLoanFromClient,
-  getAdminDashboardAnalytics
+  getAdminDashboardAnalytics,
+  agentDetails
   
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
@@ -36,6 +37,7 @@ router.route("/removeloan/:clientId/loans/:loanId").delete(verifyAdminJwt , remo
 router.route("/getClientdata/:clientId").get(verifyAdminJwt , clientDetails) 
 router.route("/allagents").get(verifyAdminJwt , agentList) 
 router.route("/allclients").get(verifyAdminJwt , clientList) 
+router.route("/getagentdetails/:agentId").get(verifyAdminJwt , agentDetails)
 router.route("/dashboard").get(verifyAdminJwt , getAdminDashboardAnalytics) 
 router.route("/addclient").post(upload.single("clientPhoto") , verifyAdminJwt , addClient) 
 export default router;

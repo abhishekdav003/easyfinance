@@ -18,7 +18,7 @@ export const verifyAdminJwt = asyncHandler(async (req, res, next) => {
       throw new ApiError (401, "Invalid Access Token")
     }
      req.admin = admin // making a new object in req
-     console.log(req.admin);
+    //  console.log(req.admin);
      
      next()
     
