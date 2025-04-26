@@ -5,6 +5,7 @@ import { ApiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import Client from "../models/client.loan.model.js";
+import Loan from "../models/loan.model.js";
 import { v4 as uuidv4 } from 'uuid';
 
 const generateAccessAndRefrshToken = async (adminId) => {
@@ -337,6 +338,12 @@ export const clientDetails = asyncHandler(async (req, res) => {
  const client = await Client.findById(clientId).populate("loans");
  return res.status(200).json(new ApiResponse(200, client, "client details fetched successfully"));
 
+});
+
+// fetch all loans
+export const loanList = asyncHandler(async (req, res) => {
+  const loans = await Loan.find();
+  return res.status(200).json(new ApiResponse(200, loans, "loan list"));
 });
 
 //add new loan object to the client array to client 
