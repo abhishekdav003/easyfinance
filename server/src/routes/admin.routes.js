@@ -39,5 +39,5 @@ router.route("/allagents").get(verifyAdminJwt , agentList)
 router.route("/allclients").get(verifyAdminJwt , clientList) 
 router.route("/getagentdetails/:agentId").get(verifyAdminJwt , agentDetails)
 router.route("/dashboard").get(verifyAdminJwt , getAdminDashboardAnalytics) 
-router.route("/addclient").post(upload.single("clientPhoto") , verifyAdminJwt , addClient) 
+router.route("/addclient").post(upload.single("file") , verifyAdminJwt , addClient) 
 export default router;
