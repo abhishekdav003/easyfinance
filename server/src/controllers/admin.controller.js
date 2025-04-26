@@ -196,7 +196,7 @@ export const agentList = asyncHandler(async (req, res) => {
 
 // add a client
 export const addClient = asyncHandler(async (req, res) => {
-  const { clientName, clientPhone, clientAddress } = req.body;
+  const { clientName, clientPhone, clientAddress , clientPhoto } = req.body;
 
   // Parse loans from string (FormData sends it as a string)
   let loans = [];
@@ -282,7 +282,7 @@ export const addClient = asyncHandler(async (req, res) => {
     clientName,
     clientPhone,
     clientAddress,
-    clientpic,
+    clientPhoto: clientpic?.url || "",
     loans: processedLoans
   });
 

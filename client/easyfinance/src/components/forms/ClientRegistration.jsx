@@ -169,8 +169,11 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
       
       // Only append file if it exists
       if (formData.clientPhoto) {
-        formData.append('clientPhoto', formData.clientPhoto);
+        formToSend.append("file", formData.clientPhoto);
+
       }
+
+      console.log("form data: ", formData)
 
       // Call the API function
       const response = await registerClient(formToSend);
