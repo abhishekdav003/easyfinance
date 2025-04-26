@@ -50,3 +50,6 @@ export default Client;
 
 const Loan = mongoose.model("Loan", loanSchema);
 export { Loan };
+
+const EMI = mongoose.model("EMI", emiSchema);
+export { EMI };
