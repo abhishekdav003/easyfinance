@@ -31,31 +31,7 @@ export const loginAdmin = (data) => {
 
 // Agent APIs
 export const registerAgent = (data) => API.post("/admin/addagent", data);
-export const registerClient = async (clientData) => {
-  try {
-    const formData = new FormData();
-
-    formData.append('clientName', clientData.clientName);
-    formData.append('clientPhone', clientData.clientPhone);
-    formData.append('clientAddress', clientData.clientAddress);
-    formData.append('loans', JSON.stringify(clientData.loans));
-
-    if (clientData.photo) {
-      formData.append('file', clientData.photo);
-    }
-
-    const response = await axios.post('/api/v1/clients/add', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error("Add Client Error:", error.response?.data || error.message);
-    throw error;
-  }
-};
+export const registerClient = (data) => API.post("/admin/addclient", data);
 
 // ✅ Get all agents with JWT token in the Authorization header
 export const getAllAgents = async () => {
