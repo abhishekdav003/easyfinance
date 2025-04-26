@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { getAllAgents, deleteAgent, registerAgent, registerClient , getAllClients } from "../services/api";
 import { useNavigate } from "react-router-dom";
-
+import AddClientForm from '../components/forms/ClientRegistration';
 import axios from "axios";
 
 

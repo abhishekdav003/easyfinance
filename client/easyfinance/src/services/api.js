@@ -31,7 +31,7 @@ export const loginAdmin = (data) => {
 
 // Agent APIs
 export const registerAgent = (data) => API.post("/admin/addagent", data);
-export const registerClient = (data) => API.post("/admin/allclients", data);
+export const registerClient = (data) => API.post("/admin/addclient", data);
 
 // ✅ Get all agents with JWT token in the Authorization header
 export const getAllAgents = async () => {
