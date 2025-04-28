@@ -35,6 +35,7 @@ import {
   getAdminDashboardAnalyticsData,
   getClientDetailsById,
   deleteClient,
+  logoutAdmin,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import AddClientForm from "../components/forms/ClientRegistration";
@@ -299,21 +300,23 @@ const Dashboard = () => {
     setSelectedLoanId(null);
   };
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch("/api/admin/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        // Redirect to login page or update state
-        window.location.href = "/login";
+      const handleLogout = async () => {
+      if (window.confirm("Are you sure you want to logout?")) {
+        try {
+          await logoutAdmin();
+          alert("Logged out successfully!");
+          window.location.href = "/login"; // Redirect to login page
+        } catch (error) {
+          console.error("Logout failed:", error);
+          alert(
+            `Failed to logout: ${
+              error.response?.data?.message || error.message
+            }`
+          );
+        }
       }
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
+    };
+
 
   
   
