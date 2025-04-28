@@ -10,7 +10,12 @@ const API = axios.create({
 
 // ✅ Delete client by ID
 export const deleteClient = (clientId) =>
+  
   API.delete(`/admin/deleteclient/${clientId}`);
+
+
+  // ✅ Logout admin
+export const logoutAdmin = () => API.post("/admin/logout");
 
 // Admin APIs
 export const registerAdmin = (data) => API.post("/admin/register", data);
