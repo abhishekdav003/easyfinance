@@ -33,11 +33,13 @@ import {
   registerAgent,
   getAllClients,
   getAdminDashboardAnalyticsData,
+  getClientDetailsById,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import AddClientForm from "../components/forms/ClientRegistration";
 import axios from "axios";
-
+import ClientDetails from "../components/ClientDetail";
+import ClientLoans from "../components/ClientLoan";
 
 // AgentRegisterForm Component
 const AgentRegisterForm = ({ onAgentAdded }) => {
@@ -258,13 +260,26 @@ const Dashboard = () => {
     dashData();
   }, []);
 
-
   const [showForm, setShowForm] = useState(false); // State to manage form visibility
+  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedLoanId, setSelectedLoanId] = useState(null);
+  const [viewMode, setViewMode] = useState("clients");
 
   const handleClientAdded = () => {
     setShowForm(false); // Close the form after a client is added
     fetchClients(); // Refresh the client list
   };
+
+  const handleViewLoans = () => {
+    if (onViewLoans) {
+      onViewLoans(); // call the parent function to switch view
+    }
+  };
+  const handleBackToClient = () => {
+    setViewMode("clientDetails");
+    setSelectedLoanId(null);
+  };
+
   const handleLogout = async () => {
     try {
       const response = await fetch("/api/admin/logout", {
@@ -345,6 +360,10 @@ const Dashboard = () => {
     }
   };
 
+  const handleView = (clientId) => {
+    setSelectedClientId(clientId);
+    setViewMode("clientDetails"); // default to Client Detail view first
+  };
   // Filter agents based on search term
   const filteredAgents = agents.filter(
     (agent) =>
@@ -693,110 +712,139 @@ const Dashboard = () => {
           {/* Clients View */}
           {activeView === "clients" && (
             <div className="p-6">
-              <div className="mb-6 flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Client List</h3>
-                <button
-                  onClick={() => setShowForm(true)} // Open the form
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
-                >
-                  <User Plus className="w-4 h-4 mr-2" />
-                  Add Client
-                </button>
-              </div>
+              {/* If a client is selected, show ClientDetails */}
+              {selectedClientId ? (
+                viewMode === "clientDetails" ? (
+                  <ClientDetails
+                    clientId={selectedClientId}
+                    onBack={() => setSelectedClientId(null)}
+                    onViewLoans={() => setViewMode("clientLoans")}
+                  />
+                ) : (
+                  <ClientLoans
+                    clientId={selectedClientId}
+                    onBack={() => setViewMode("clientDetails")}
+                    onViewLoanDetails={(loanId) => {
+                      // optional
+                    }}
+                  />
+                )
+              ) : (
+                //client list
+                <>
+                  <div className="mb-6 flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Client List</h3>
+                    <button
+                      onClick={() => setShowForm(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add Client
+                    </button>
+                  </div>
 
-              {/* Conditionally render the AddClientForm */}
-              {showForm && <AddClientForm onClientAdded={handleClientAdded} />}
+                  {/* Conditionally render the AddClientForm */}
+                  {showForm && (
+                    <AddClientForm onClientAdded={handleClientAdded} />
+                  )}
 
-              {/* Existing client list table */}
-              <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Phone
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Address
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {clients.map((client, index) => (
-                        <tr
-                          key={client._id || index}
-                          className="hover:bg-gray-50"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-10 w-10">
-                                {client.clientpic ? (
-                                  <img
-                                    className="h-10 w-10 rounded-full object-cover"
-                                    src={client.clientpic}
-                                    alt=""
-                                  />
-                                ) : (
-                                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                    {client.clientName
-                                      ?.charAt(0)
-                                      ?.toUpperCase() || "C"}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {client.clientName}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {client.clientPhone}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {client.clientAddress}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button className="text-blue-600 hover:text-blue-900 mr-3">
-                              View
-                            </button>
-                            <button className="text-green-600 hover:text-green-900 mr-3">
-                              Add Loan
-                            </button>
-                            <button
-                              className="text-red-600 hover:text-red-900"
-                              onClick={() => handleDeleteClient(client._id)}
+                  {/* Client list table */}
+                  <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Name
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Phone
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Address
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {clients.map((client, index) => (
+                            <tr
+                              key={client._id || index}
+                              className="hover:bg-gray-50"
                             >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {clients.length === 0 && (
-                        <tr>
-                          <td
-                            colSpan="4"
-                            className="px-6 py-4 text-center text-sm text-gray-500"
-                          >
-                            No clients found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="flex-shrink-0 h-10 w-10">
+                                    {client.clientpic ? (
+                                      <img
+                                        className="h-10 w-10 rounded-full object-cover"
+                                        src={client.clientpic}
+                                        alt=""
+                                      />
+                                    ) : (
+                                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                                        {client.clientName
+                                          ?.charAt(0)
+                                          ?.toUpperCase() || "C"}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="ml-4">
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {client.clientName}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {client.clientPhone}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900">
+                                  {client.clientAddress}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button
+                                  onClick={() =>
+                                    setSelectedClientId(client._id)
+                                  }
+                                  className="text-blue-600 hover:text-blue-900 mr-3"
+                                >
+                                  View
+                                </button>
+                                <button className="text-green-600 hover:text-green-900 mr-3">
+                                  Add Loan
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClient(client._id)}
+                                  className="text-red-600 hover:text-red-900"
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {clients.length === 0 && (
+                            <tr>
+                              <td
+                                colSpan="4"
+                                className="px-6 py-4 text-center text-sm text-gray-500"
+                              >
+                                No clients found
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

@@ -68,6 +68,30 @@ export const getAllClients = async () => {
     throw error;
   }
 };
+export const getClientDetailsById = async (clientId) => {
+  try {
+    const response = await API.get(`/admin/getClientdata/${clientId}`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching client detail:", error);
+    throw error;
+  }
+};
+
+export const loanDetails = async (clientId) => {
+  try {
+    const response = await API.get(`/admin/viewclientloan/${clientId}/loans`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching client detail:", error);
+    throw error;
+  }
+};
+
 
 
 

@@ -17,17 +17,18 @@ const emiSchema = new mongoose.Schema({
 const loanSchema = new mongoose.Schema({
   uniqueLoanNumber: { type: String, required: true },
   loanAmount: { type: Number, required: true },
-  disbursedAmount: { type: Number }, // after interest deduction
+  disbursedAmount: { type: Number },
   interestRate: { type: Number, required: true },
-  tenureDays: { type: Number,  },
-  tenureMonths: { type: Number},
+  tenureDays: { type: Number },
+  tenureMonths: { type: Number },
   emiType: { type: String, enum: ["Daily", "Weekly", "Monthly", "Full Payment"], required: true },
+  emiAmount: { type: Number, required: true },  // 🔥 Add this line
   totalPayable: { type: Number, required: true },
   totalCollected: { type: Number, default: 0 },
   totalAmountLeft: { type: Number, required: true },
   startDate: { type: Date, required: true },
   dueDate: { type: Date },
-  emiRecords: [emiSchema], // list of EMI collection records
+  emiRecords: [emiSchema],
   status: { type: String, enum: ["Ongoing", "Completed"], default: "Ongoing" },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
@@ -39,6 +40,7 @@ const clientSchema = new mongoose.Schema({
   clientPhone: { type: String, required: true, unique: true },
   clientAddress: { type: String },
   clientPhoto: { type: String },
+  email: { type: String },
   loans: [loanSchema], // array of loans
   createdAt: { type: Date, default: Date.now }
 });

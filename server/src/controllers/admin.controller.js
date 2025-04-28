@@ -197,7 +197,7 @@ export const agentList = asyncHandler(async (req, res) => {
 
 // add a client
 export const addClient = asyncHandler(async (req, res) => {
-  const { clientName, clientPhone, clientAddress , clientPhoto } = req.body;
+  const { clientName, clientPhone, clientAddress , clientPhoto , email } = req.body;
 
   // Parse loans from string (FormData sends it as a string)
   let loans = [];
@@ -231,41 +231,57 @@ export const addClient = asyncHandler(async (req, res) => {
       emiType,
       startDate = new Date()
     } = loan;
-
-    // 🔁 Convert months to days if emiType is Monthly
+  
     let totalTenureDays = tenureDays;
+    let totalTenureMonths = tenureMonths || 0;
+  
     if (!totalTenureDays && emiType === "Monthly" && tenureMonths) {
       totalTenureDays = tenureMonths * 30;
     }
-
-    // ✅ Ensure required fields are present
-    if (
-      !loanAmount ||
-      !interestRate ||
-      !totalTenureDays ||
-      !emiType
-    ) {
+  
+    if (!loanAmount || !interestRate || !totalTenureDays || !emiType) {
       throw new ApiError(400, "Missing required loan fields");
     }
-
+  
     const interest = (loanAmount * interestRate) / 100;
     const disbursedAmount = loanAmount - interest;
     const totalPayable = loanAmount;
     const totalAmountLeft = totalPayable;
     const start = new Date(startDate);
     const dueDate = new Date(start.getTime() + Number(totalTenureDays) * 24 * 60 * 60 * 1000);
-
+  
     if (isNaN(dueDate.getTime())) {
       throw new ApiError(400, "Invalid due date calculated from tenure");
     }
-
+  
+    // 🧮 Calculate EMI
+    let emiAmount = 0;
+    if (emiType === "Daily") {
+      const numberOfDays = totalTenureDays;
+      emiAmount = totalPayable / numberOfDays;
+    } else if (emiType === "Weekly") {
+      const numberOfWeeks = Math.ceil(totalTenureDays / 7);
+      emiAmount = totalPayable / numberOfWeeks;
+    } else if (emiType === "Monthly") {
+      const numberOfMonths = totalTenureMonths || Math.floor(totalTenureDays / 30);
+      emiAmount = totalPayable / numberOfMonths;
+    } else if (emiType === "Full Payment") {
+      emiAmount = totalPayable;
+    }
+  
+    emiAmount = Math.round(emiAmount); // ✅ Very important!
+  
+    console.log("✅ Saving Loan:", { loanAmount, interestRate, emiType, emiAmount });
+  
     return {
       uniqueLoanNumber: uuidv4(),
       loanAmount,
       disbursedAmount,
       interestRate,
       tenureDays: totalTenureDays,
+      tenureMonths: totalTenureMonths,
       emiType,
+      emiAmount,  // <<<<<<  VERY IMPORTANT !!!!
       totalPayable,
       totalCollected: 0,
       totalAmountLeft,
@@ -284,7 +300,8 @@ export const addClient = asyncHandler(async (req, res) => {
     clientPhone,
     clientAddress,
     clientPhoto: clientpic?.url || "",
-    loans: processedLoans
+    loans: processedLoans,
+    email: email
   });
 
   return res
@@ -332,6 +349,16 @@ export const clientList = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, clients, "client list"));
 });
 
+// particular loan details
+export const loanDetails = asyncHandler(async (req, res) => {
+  const { loanId } = req.params;
+  const loan = await Loan.findById(loanId);
+  if (!loan) {
+    throw new ApiError(404, "Loan not found");
+  }
+  return res.status(200).json(new ApiResponse(200, loan, "Loan details fetched successfully"));
+});
+
 //show client details with all details 
 export const clientDetails = asyncHandler(async (req, res) => {
  const {clientId} = req.params
@@ -342,8 +369,20 @@ export const clientDetails = asyncHandler(async (req, res) => {
 
 // fetch all loans
 export const loanList = asyncHandler(async (req, res) => {
-  const loans = await Loan.find();
-  return res.status(200).json(new ApiResponse(200, loans, "loan list"));
+  const { clientId } = req.params;
+
+  if (!clientId) {
+    return res.status(400).json(new ApiResponse(400, null, "Client ID is required"));
+  }
+
+  const client = await Client.findById(clientId);
+
+  if (!client) {
+    return res.status(404).json(new ApiResponse(404, null, "Client not found"));
+  }
+
+  // Now send client's loans array
+  return res.status(200).json(new ApiResponse(200, client.loans, "Client loans fetched successfully"));
 });
 
 //add new loan object to the client array to client 
