@@ -777,10 +777,10 @@ const Dashboard = () => {
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center">
                                   <div className="flex-shrink-0 h-10 w-10">
-                                    {client.clientpic ? (
+                                    {client.clientPhoto ? (
                                       <img
                                         className="h-10 w-10 rounded-full object-cover"
-                                        src={client.clientpic}
+                                        src={client.clientPhoto}
                                         alt=""
                                       />
                                     ) : (
