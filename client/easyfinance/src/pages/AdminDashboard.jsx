@@ -38,8 +38,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import AddClientForm from "../components/forms/ClientRegistration";
 import axios from "axios";
-import ClientDetails from "../components/ClientDetail";
-import ClientLoans from "../components/ClientLoan";
+import ClientDetails from "../components/details/ClientDetail";
+import ClientLoans from "../components/details/ClientLoan";
 
 // AgentRegisterForm Component
 const AgentRegisterForm = ({ onAgentAdded }) => {

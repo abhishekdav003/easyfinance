@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getClientDetailsById } from "../services/api.js";
+import { getClientDetailsById } from "../../services/api.js";
 
 const ClientDetails = ({ clientId, onBack, onViewLoans }) => {
   const [client, setClient] = useState(null);

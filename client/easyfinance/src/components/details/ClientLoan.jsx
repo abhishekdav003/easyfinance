@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { loanDetails } from "../services/api.js";
+import { loanDetails } from "../../services/api.js";
 
 const ClientLoans = ({ clientId, onBack, onViewLoans }) => {
   const [loans, setLoans] = useState([]);
