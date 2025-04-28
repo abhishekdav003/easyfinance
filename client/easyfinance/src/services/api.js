@@ -6,9 +6,11 @@ const API = axios.create({
   withCredentials: true, // ✅ This sends cookies with every request
 });
 
-
 // Function to get the token from localStorage (or sessionStorage if preferred)
 
+// ✅ Delete client by ID
+export const deleteClient = (clientId) =>
+  API.delete(`/admin/deleteclient/${clientId}`);
 
 // Admin APIs
 export const registerAdmin = (data) => API.post("/admin/register", data);
@@ -16,7 +18,7 @@ export const registerAdmin = (data) => API.post("/admin/register", data);
 // Login handling both email and username
 export const loginAdmin = (data) => {
   // console.log('login data', data);
-  
+
   const isEmail = data.emailOrUsername.includes("@");
 
   const payload = {
@@ -91,10 +93,6 @@ export const loanDetails = async (clientId) => {
     throw error;
   }
 };
-
-
-
-
 
 // ✅ Delete agent by ID
 export const deleteAgent = (id) => API.delete(`/admin/deleteagent/${id}`);
