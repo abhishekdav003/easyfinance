@@ -35,6 +35,9 @@ const ClientDetails = ({ clientId, onBack, onViewLoans }) => {
     }
   };
 
+  // Default avatar if no photo is available
+  const defaultAvatar = "https://via.placeholder.com/150?text=No+Photo";
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -89,6 +92,34 @@ const ClientDetails = ({ clientId, onBack, onViewLoans }) => {
           >
             View Loans
           </button>
+        </div>
+      </div>
+
+      {/* Client Profile Header with Photo */}
+      <div className="flex flex-col md:flex-row items-center mb-6 bg-gray-50 p-4 rounded-lg">
+        <div className="mb-4 md:mb-0 md:mr-6">
+          <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-lg">
+            <img 
+              src={client.clientPhoto || defaultAvatar} 
+              alt={`${client.clientName || 'Client'} Photo`}
+              className="w-full h-full object-cover"
+              onError={(e) => {e.target.src = defaultAvatar}}
+            />
+            {client.status === 'Active' && (
+              <div className="absolute bottom-0 right-0 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+            )}
+          </div>
+        </div>
+        <div className="text-center md:text-left flex-1">
+          <h2 className="text-2xl font-bold text-gray-800">{client.clientName || "Client Name"}</h2>
+          <p className="text-gray-600">{client.email || "No email provided"}</p>
+          <div className="mt-2">
+            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+              client.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              {client.status || "Active"}
+            </span>
+          </div>
         </div>
       </div>
 
