@@ -115,11 +115,8 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
 
         // Check for required fields as per API
         if (!loan.loanAmount || !loan.interestRate) {
-          // Don't need to validate tenureDays here since we're calculating it from tenureMonths if needed in the API
           setApiError(
-            `Loan #${
-              i + 1
-            } is missing required fields (amount or interest rate)`
+            `Loan #${i + 1} is missing required fields (amount or interest rate)`
           );
           isValid = false;
           break;
@@ -131,31 +128,40 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
           isNaN(Number(loan.interestRate))
         ) {
           setApiError(
-            `Loan #${
-              i + 1
-            } has invalid amount or interest rate (must be numbers)`
+            `Loan #${i + 1} has invalid amount or interest rate (must be numbers)`
           );
           isValid = false;
           break;
         }
 
-        // Ensure either tenureDays or tenureMonths is provided for Monthly loans
-        if (
-          loan.emiType === "Monthly" &&
-          !loan.tenureMonths &&
-          !loan.tenureDays
-        ) {
-          setApiError(
-            `Loan #${i + 1} must have either Tenure Days or Tenure Months`
-          );
-          isValid = false;
-          break;
-        }
-
-        // For Daily loans, we need tenureDays
+        // Validate tenure based on EMI type
         if (loan.emiType === "Daily" && !loan.tenureDays) {
           setApiError(
             `Loan #${i + 1} must have Tenure Days specified for Daily EMI type`
+          );
+          isValid = false;
+          break;
+        }
+
+        if (loan.emiType === "Monthly" && !loan.tenureMonths && !loan.tenureDays) {
+          setApiError(
+            `Loan #${i + 1} must have either Tenure Months or Tenure Days specified for Monthly EMI type`
+          );
+          isValid = false;
+          break;
+        }
+        
+        if (loan.emiType === "Weekly" && !loan.tenureDays) {
+          setApiError(
+            `Loan #${i + 1} must have Tenure Days specified for Weekly EMI type`
+          );
+          isValid = false;
+          break;
+        }
+        
+        if (loan.emiType === "Full Payment" && !loan.tenureDays) {
+          setApiError(
+            `Loan #${i + 1} must have Tenure Days specified for Full Payment type`
           );
           isValid = false;
           break;
@@ -502,32 +508,6 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                     />
                   </div>
 
-                  {loan.emiType === "Daily" ? (
-                    <div className="relative">
-                      <input
-                        value={loan.tenureDays}
-                        onChange={(e) =>
-                          handleLoanChange(i, "tenureDays", e.target.value)
-                        }
-                        placeholder="Tenure (Days) *required for Daily EMI"
-                        className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                        required={loan.emiType === "Daily"}
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <input
-                        value={loan.tenureMonths}
-                        onChange={(e) =>
-                          handleLoanChange(i, "tenureMonths", e.target.value)
-                        }
-                        placeholder="Tenure (Months) *required for Monthly EMI"
-                        className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                        required={loan.emiType === "Monthly"}
-                      />
-                    </div>
-                  )}
-
                   <div className="relative">
                     <select
                       value={loan.emiType}
@@ -537,7 +517,9 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                       className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none bg-white"
                     >
                       <option value="Daily">Daily</option>
+                      <option value="Weekly">Weekly</option>
                       <option value="Monthly">Monthly</option>
+                      <option value="Full Payment">Full Payment</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                       <svg
@@ -557,6 +539,37 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                     </div>
                   </div>
 
+                  {loan.emiType === "Monthly" ? (
+                    <div className="relative">
+                      <input
+                        value={loan.tenureMonths}
+                        onChange={(e) =>
+                          handleLoanChange(i, "tenureMonths", e.target.value)
+                        }
+                        placeholder="Tenure (Months)"
+                        className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        required={loan.emiType === "Monthly" && !loan.tenureDays}
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        value={loan.tenureDays}
+                        onChange={(e) =>
+                          handleLoanChange(i, "tenureDays", e.target.value)
+                        }
+                        placeholder="Tenure (Days)"
+                        className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        required={
+                          loan.emiType === "Daily" || 
+                          loan.emiType === "Weekly" || 
+                          loan.emiType === "Full Payment" ||
+                          (loan.emiType === "Monthly" && !loan.tenureMonths)
+                        }
+                      />
+                    </div>
+                  )}
+
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Calendar size={18} className="text-gray-400" />
@@ -571,21 +584,6 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                     />
                   </div>
                 </div>
-
-                {loan.emiType === "Daily" && !loan.tenureDays && (
-                  <p className="mt-2 text-sm text-red-500">
-                    Tenure Days is required for Daily EMI type
-                  </p>
-                )}
-
-                {loan.emiType === "Monthly" &&
-                  !loan.tenureMonths &&
-                  !loan.tenureDays && (
-                    <p className="mt-2 text-sm text-red-500">
-                      Either Tenure Months or Days is required for Monthly EMI
-                      type
-                    </p>
-                  )}
               </div>
             ))}
 
