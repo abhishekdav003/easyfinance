@@ -41,6 +41,7 @@ import AddClientForm from "../components/forms/ClientRegistration";
 import axios from "axios";
 import ClientDetails from "../components/details/ClientDetail";
 import ClientLoans from "../components/details/ClientLoan";
+import AddLoanForm from "../components/details/AddLoan";
 
 // AgentRegisterForm Component
 const AgentRegisterForm = ({ onAgentAdded }) => {
@@ -224,6 +225,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddLoanForm, setShowAddLoanForm] = useState(false);
 
   const navigate = useNavigate();
 
@@ -263,7 +265,8 @@ const Dashboard = () => {
 
   const [showForm, setShowForm] = useState(false); // State to manage form visibility
   const [selectedClientId, setSelectedClientId] = useState(null);
-  const [selectedLoanId, setSelectedLoanId] = useState(null);
+  const [addingLoanClientId, setAddingLoanClientId] = useState(null);
+
   const [viewMode, setViewMode] = useState("clients");
 
   const handleClientAdded = () => {
@@ -271,23 +274,22 @@ const Dashboard = () => {
     fetchClients(); // Refresh the client list
   };
 
-      const handleDeleteClient = async (clientId) => {
-      if (window.confirm("Are you sure you want to delete this client?")) {
-        try {
-          await deleteClient(clientId);
-          alert("Client deleted successfully!");
-          setClients(clients.filter((client) => client._id !== clientId));
-        } catch (error) {
-          console.error("Error deleting client:", error);
-          alert(
-            `Failed to delete client: ${
-              error.response?.data?.message || error.message
-            }`
-          );
-        }
+  const handleDeleteClient = async (clientId) => {
+    if (window.confirm("Are you sure you want to delete this client?")) {
+      try {
+        await deleteClient(clientId);
+        alert("Client deleted successfully!");
+        setClients(clients.filter((client) => client._id !== clientId));
+      } catch (error) {
+        console.error("Error deleting client:", error);
+        alert(
+          `Failed to delete client: ${
+            error.response?.data?.message || error.message
+          }`
+        );
       }
-    };
-
+    }
+  };
 
   const handleViewLoans = () => {
     if (onViewLoans) {
@@ -314,9 +316,6 @@ const Dashboard = () => {
       console.error("Logout failed:", error);
     }
   };
-
-  
-  
 
   // Handle delete agent
   const handleDeleteAgent = async (id) => {
@@ -365,6 +364,8 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
+ 
   const fetchClients = async () => {
     try {
       setLoading(true);
@@ -839,16 +840,34 @@ const Dashboard = () => {
                                 >
                                   View
                                 </button>
-                                <button className="text-green-600 hover:text-green-900 mr-3">
+                                <button
+                                  onClick={() =>
+                                    setAddingLoanClientId(client._id)
+                                  }
+                                  className="text-green-600 hover:text-green-900 mr-3"
+                                >
                                   Add Loan
                                 </button>
+
+                                {addingLoanClientId === client._id && (
+                                  <div className="mt-6">
+                                    <AddLoanForm
+                                      clientId={client._id}
+                                      onClose={() =>
+                                        setAddingLoanClientId(null)
+                                      }
+                                      onLoanAdded={() => {
+                                        fetchClients(); // Refresh after adding loan
+                                      }}
+                                    />
+                                  </div>
+                                )}
                                 <button
                                   onClick={() => handleDeleteClient(client._id)}
                                   className="text-red-600 hover:text-red-900"
                                 >
                                   Delete
                                 </button>
-
                               </td>
                             </tr>
                           ))}

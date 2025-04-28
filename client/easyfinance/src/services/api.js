@@ -94,5 +94,10 @@ export const loanDetails = async (clientId) => {
   }
 };
 
+
+//add loan 
+export const addLoanToClient = async (clientId, loans) => {
+  return await API.post(`/admin/addloantoclient/${clientId}`, { loans });
+}
 // ✅ Delete agent by ID
 export const deleteAgent = (id) => API.delete(`/admin/deleteagent/${id}`);

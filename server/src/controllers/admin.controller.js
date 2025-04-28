@@ -388,65 +388,84 @@ export const loanList = asyncHandler(async (req, res) => {
 //add new loan object to the client array to client 
 export const addLoanToClient = asyncHandler(async (req, res) => {
   const { clientId } = req.params;
-  const {
-    loanAmount,
-    interestRate,
-    tenureDays,
-    tenureMonths,
-    emiType,
-    startDate : rawStartDate
-  } = req.body;
-
-  const start = rawStartDate ? new Date(rawStartDate) : new Date();
+  const { loans } = req.body; // 👈 change here
+  
+  if (!Array.isArray(loans) || loans.length === 0) {
+    throw new ApiError(400, "No loan data provided");
+  }
 
   const client = await Client.findById(clientId);
   if (!client) {
     throw new ApiError(404, "Client not found");
   }
-  let dueDate;
 
-  if (tenureDays) {
-    dueDate = new Date(start.getTime() + Number(tenureDays) * 24 * 60 * 60 * 1000);
-  } else if (tenureMonths) {
-    dueDate = new Date(start);
-    dueDate.setMonth(dueDate.getMonth() + Number(tenureMonths));
-  } else {
-    throw new ApiError(400, "Either tenureDays or tenureMonths must be provided");
+  for (const loanData of loans) {
+    const {
+      loanAmount,
+      interestRate,
+      tenureDays,
+      tenureMonths,
+      emiType,
+      startDate: rawStartDate
+    } = loanData;
+
+    const start = rawStartDate ? new Date(rawStartDate) : new Date();
+    let dueDate;
+
+    if (tenureDays) {
+      dueDate = new Date(start.getTime() + Number(tenureDays) * 24 * 60 * 60 * 1000);
+    } else if (tenureMonths) {
+      dueDate = new Date(start);
+      dueDate.setMonth(dueDate.getMonth() + Number(tenureMonths));
+    } else {
+      throw new ApiError(400, "Either tenureDays or tenureMonths must be provided");
+    }
+
+    const interest = (loanAmount * interestRate) / 100;
+    const disbursedAmount = loanAmount - interest;
+
+    let emiAmount = 0;
+    if (emiType === "Daily" && tenureDays) {
+      emiAmount = Math.round(loanAmount / tenureDays);
+    } else if (emiType === "Weekly" && tenureDays) {
+      const weeks = Math.ceil(tenureDays / 7);
+      emiAmount = Math.round(loanAmount / weeks);
+    } else if (emiType === "Monthly" && tenureMonths) {
+      emiAmount = Math.round(loanAmount / tenureMonths);
+    } else if (emiType === "Full Payment") {
+      emiAmount = loanAmount;
+    } else {
+      throw new ApiError(400, "Invalid EMI Type");
+    }
+
+    const newLoan = {
+      uniqueLoanNumber: uuidv4(),
+      loanAmount,
+      disbursedAmount,
+      interestRate,
+      tenureDays: tenureDays || null,
+      tenureMonths: tenureMonths || null,
+      emiType,
+      emiAmount,
+      totalPayable: loanAmount,
+      totalCollected: 0,
+      totalAmountLeft: loanAmount,
+      startDate: start,
+      dueDate,
+      emiRecords: [],
+      status: "Ongoing",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    client.loans.push(newLoan);
   }
 
-  if (isNaN(dueDate.getTime())) {
-    throw new ApiError(400, "Invalid due date calculated from tenure");
-  }
-
-  const interest = (loanAmount * interestRate) / 100;
-  const disbursedAmount = loanAmount - interest;
-
-  const newLoan = {
-    uniqueLoanNumber: uuidv4(),
-    loanAmount,
-    disbursedAmount,
-    interestRate,
-    tenureDays: tenureDays || null,
-    tenureMonths: tenureMonths || null,
-    emiType,
-    totalPayable: loanAmount,
-    totalCollected: 0,
-    totalAmountLeft: loanAmount,
-    startDate: start,
-    dueDate,
-    emiRecords: [],
-    status: "Ongoing",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  client.loans.push(newLoan);
   await client.save();
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, client, "Loan added to client successfully"));
+  return res.status(201).json(new ApiResponse(201, client, "Loan(s) added successfully"));
 });
+
 
 //remove loan once completed
 export const removeLoanFromClient = asyncHandler(async (req, res) => {

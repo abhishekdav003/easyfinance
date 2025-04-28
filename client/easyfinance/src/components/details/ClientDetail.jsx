@@ -5,6 +5,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans }) => {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
 
   useEffect(() => {
     const fetchClientDetails = async () => {
