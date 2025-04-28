@@ -34,6 +34,7 @@ import {
   getAllClients,
   getAdminDashboardAnalyticsData,
   getClientDetailsById,
+  deleteClient,
 } from "../services/api";
 import { useNavigate } from "react-router-dom";
 import AddClientForm from "../components/forms/ClientRegistration";
@@ -270,6 +271,24 @@ const Dashboard = () => {
     fetchClients(); // Refresh the client list
   };
 
+      const handleDeleteClient = async (clientId) => {
+      if (window.confirm("Are you sure you want to delete this client?")) {
+        try {
+          await deleteClient(clientId);
+          alert("Client deleted successfully!");
+          setClients(clients.filter((client) => client._id !== clientId));
+        } catch (error) {
+          console.error("Error deleting client:", error);
+          alert(
+            `Failed to delete client: ${
+              error.response?.data?.message || error.message
+            }`
+          );
+        }
+      }
+    };
+
+
   const handleViewLoans = () => {
     if (onViewLoans) {
       onViewLoans(); // call the parent function to switch view
@@ -295,6 +314,9 @@ const Dashboard = () => {
       console.error("Logout failed:", error);
     }
   };
+
+  
+  
 
   // Handle delete agent
   const handleDeleteAgent = async (id) => {
@@ -826,6 +848,7 @@ const Dashboard = () => {
                                 >
                                   Delete
                                 </button>
+
                               </td>
                             </tr>
                           ))}
