@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { loginAdmin } from '../services/api'; // import your login service
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loginType, setLoginType] = useState('');
-  const [email, setEmail] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -16,13 +16,22 @@ const LoginPage = () => {
     }
   }, [location]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Here you would typically handle authentication
-    console.log('Login submitted:', { loginType, email, password, rememberMe });
-    
-    // Navigate to dashboard after successful login
-    navigate('/dashboard');
+
+    try {
+      // Adjust the API call for loginType if needed
+      const formData = { emailOrUsername, password };
+
+      console.log('Logging in with:', formData, 'as', loginType);
+      
+      const res = await loginAdmin(formData); // Assuming loginAdmin works for both roles
+      localStorage.setItem('admin', JSON.stringify(res.data.data)); // Adjust key if needed
+      alert(res.data.message);
+      navigate('/dashboard');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Login failed');
+    }
   };
 
   return (
@@ -31,27 +40,33 @@ const LoginPage = () => {
         <div className="bg-gradient-to-r from-indigo-600 to-purple-700 p-6 text-white">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
-            <p>{loginType === 'admin' ? 'Admin Portal Access' : loginType === 'agent' ? 'Agent Portal Access' : 'Account Login'}</p>
+            <p>
+              {loginType === 'admin'
+                ? 'Admin Portal Access'
+                : loginType === 'agent'
+                ? 'Agent Portal Access'
+                : 'Account Login'}
+            </p>
           </div>
         </div>
-        
+
         <div className="p-8">
-          {!loginType && (
+          {!loginType ? (
             <div className="mb-6 space-y-4">
-              <button 
+              <button
                 onClick={() => setLoginType('admin')}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors duration-300"
               >
                 Login as Admin
               </button>
-              <button 
+              <button
                 onClick={() => setLoginType('agent')}
                 className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors duration-300"
               >
                 Login as Agent
               </button>
               <div className="text-center mt-6">
-                <button 
+                <button
                   onClick={() => navigate('/')}
                   className="text-indigo-600 hover:text-indigo-800 font-medium"
                 >
@@ -59,45 +74,43 @@ const LoginPage = () => {
                 </button>
               </div>
             </div>
-          )}
-          
-          {loginType && (
+          ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-    <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 mb-1">
-      Username or Email
-    </label>
-    <input
-      id="usernameOrEmail"
-      type="text"
-      value={email}
-      onChange={(e) => setEmail(e.target.value)}
-      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-      placeholder="Enter your username or email"
-      required
-    />
-  </div>
-  
-  <div>
-    <div className="flex items-center justify-between mb-1">
-      <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-        Password
-      </label>
-      <a href="#" className="text-sm text-indigo-600 hover:text-indigo-800">
-        Forgot Password?
-      </a>
-    </div>
-    <input
-      id="password"
-      type="password"
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-      placeholder="Enter your password"
-      required
-    />
-  </div>
-              
+                <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                  Username or Email
+                </label>
+                <input
+                  id="usernameOrEmail"
+                  type="text"
+                  value={emailOrUsername}
+                  onChange={(e) => setEmailOrUsername(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter your username or email"
+                  required
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
+                  <a href="#" className="text-sm text-indigo-600 hover:text-indigo-800">
+                    Forgot Password?
+                  </a>
+                </div>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+
               <div className="flex items-center">
                 <input
                   id="remember-me"
@@ -110,16 +123,16 @@ const LoginPage = () => {
                   Remember me
                 </label>
               </div>
-              
+
               <button
                 type="submit"
                 className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-300"
               >
                 Sign In
               </button>
-              
+
               <div className="text-center mt-4">
-                <button 
+                <button
                   type="button"
                   onClick={() => setLoginType('')}
                   className="text-gray-600 hover:text-gray-800 text-sm"
@@ -127,9 +140,9 @@ const LoginPage = () => {
                   Change Login Type
                 </button>
               </div>
-              
+
               <div className="text-center mt-2">
-                <button 
+                <button
                   type="button"
                   onClick={() => navigate('/')}
                   className="text-indigo-600 hover:text-indigo-800 font-medium"
@@ -146,5 +159,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-
-
