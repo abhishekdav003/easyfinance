@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { loginAdmin } from '../services/api'; // import your login service
+import { loginAdmin, loginAgent } from '../services/api'; // import your login service
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -16,23 +16,44 @@ const LoginPage = () => {
     }
   }, [location]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+      e.preventDefault();
 
-    try {
-      // Adjust the API call for loginType if needed
-      const formData = { emailOrUsername, password };
+      try {
+        const formData = { emailOrUsername, password };
+        console.log('Logging in with:', formData, 'as', loginType);
 
-      console.log('Logging in with:', formData, 'as', loginType);
-      
-      const res = await loginAdmin(formData); // Assuming loginAdmin works for both roles
-      localStorage.setItem('admin', JSON.stringify(res.data.data)); // Adjust key if needed
-      alert(res.data.message);
-      navigate('/dashboard');
-    } catch (err) {
-      alert(err.response?.data?.message || 'Login failed');
-    }
-  };
+        let res;
+        if (loginType === 'admin') {
+          res = await loginAdmin(formData); // Admin login request
+          localStorage.setItem('admin', JSON.stringify(res.data.data));  // Store admin data
+          navigate('/admin-dashboard');
+        } else if (loginType === 'agent') {
+          // For agent, adjust payload to match the backend expectations
+          const agentData = { emailOrUsername, password };  // Use emailOrUsername as input
+          res = await loginAgent(agentData);  // Agent login request
+
+          // Since backend sets cookies, no need to store tokens in localStorage
+          // But you can store the agent's profile data if needed for immediate use
+          localStorage.setItem('agent', JSON.stringify(res.data.data.agent)); // Store agent data (excluding password)
+
+          navigate('/agent-dashboard');
+        }
+
+        alert(res.data.message); // Show success message
+      } catch (err) {
+        console.error('Full error:', err);
+
+        if (err.response) {
+          console.error('Error response:', err.response);
+          alert(err.response.data?.message || 'Login failed');
+        } else {
+          console.error('Error message:', err.message);
+          alert('Network error: ' + err.message);
+        }
+      }
+    };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
@@ -67,7 +88,7 @@ const LoginPage = () => {
               </button>
               <div className="text-center mt-6">
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/agent-dashboard')}
                   className="text-indigo-600 hover:text-indigo-800 font-medium"
                 >
                   Back to Home

@@ -27,3 +27,6 @@ agentRoute.route("/collectemi/:clientId/:loanId").post(verifyAgentJwt , collectE
 
 export default agentRoute
 
+
+
+
