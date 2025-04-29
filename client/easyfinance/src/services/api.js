@@ -94,7 +94,7 @@ export const loanDetails = async (clientId) => {
     });
     return response.data;
   } catch (error) {
-    console.error("Error fetching client detail:", error);
+    console.error("Error fetching loan detail:", error);
     throw error;
   }
 };
@@ -106,3 +106,21 @@ export const addLoanToClient = async (clientId, loans) => {
 }
 // ✅ Delete agent by ID
 export const deleteAgent = (id) => API.delete(`/admin/deleteagent/${id}`);
+
+
+//loan details 
+export const getLoanDetailsById = async (loanId) => {
+  try {
+    const response = await API.get(`/admin/getloandetails/${loanId}`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching loan details:", error);
+    throw error;
+  }
+};
+
+//collect emi
+export const collectEMI = (clientId, loanId, data, isAgent = false) =>
+  API.post(`${isAgent ? '/agent' : '/admin'}/collectemi/${clientId}/${loanId}`, data);

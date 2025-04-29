@@ -29,9 +29,16 @@ const loanSchema = new mongoose.Schema({
   startDate: { type: Date, required: true },
   dueDate: { type: Date },
   emiRecords: [emiSchema],
+  paidEmis: { type: Number, default: 0 },
   status: { type: String, enum: ["Ongoing", "Completed"], default: "Ongoing" },
   createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  updatedAt: { type: Date, default: Date.now },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
+  }
+  
+  
 });
 
 // Main Client Schema

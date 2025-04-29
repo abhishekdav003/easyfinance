@@ -43,7 +43,7 @@ import axios from "axios";
 import ClientDetails from "../components/details/ClientDetail";
 import ClientLoans from "../components/details/ClientLoan";
 import AddLoanForm from "../components/details/AddLoan";
-
+import LoanDetailsShow from "../components/details/LoanDetail";
 // AgentRegisterForm Component
 const AgentRegisterForm = ({ onAgentAdded }) => {
   const [formData, setFormData] = useState({
@@ -227,6 +227,7 @@ const Dashboard = () => {
   const [activeView, setActiveView] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddLoanForm, setShowAddLoanForm] = useState(false);
+  const [selectedLoanId, setSelectedLoanId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -262,7 +263,7 @@ const Dashboard = () => {
     fetchAgents();
     fetchClients();
     dashData();
-  }, []);
+  }, [Dashboard]);
 
   const [showForm, setShowForm] = useState(false); // State to manage form visibility
   const [selectedClientId, setSelectedClientId] = useState(null);
@@ -302,23 +303,20 @@ const Dashboard = () => {
     setSelectedLoanId(null);
   };
 
-      const handleLogout = async () => {
-      if (window.confirm("Are you sure you want to logout?")) {
-        try {
-          await logoutAdmin();
-          alert("Logged out successfully!");
-          window.location.href = "/login"; // Redirect to login page
-        } catch (error) {
-          console.error("Logout failed:", error);
-          alert(
-            `Failed to logout: ${
-              error.response?.data?.message || error.message
-            }`
-          );
-        }
+  const handleLogout = async () => {
+    if (window.confirm("Are you sure you want to logout?")) {
+      try {
+        await logoutAdmin();
+        alert("Logged out successfully!");
+        window.location.href = "/login"; // Redirect to login page
+      } catch (error) {
+        console.error("Logout failed:", error);
+        alert(
+          `Failed to logout: ${error.response?.data?.message || error.message}`
+        );
       }
-    };
-
+    }
+  };
 
   // Handle delete agent
   const handleDeleteAgent = async (id) => {
@@ -368,7 +366,6 @@ const Dashboard = () => {
     }
   };
 
- 
   const fetchClients = async () => {
     try {
       setLoading(true);
@@ -738,7 +735,6 @@ const Dashboard = () => {
           {/* Clients View */}
           {activeView === "clients" && (
             <div className="p-6">
-              {/* If a client is selected, show ClientDetails */}
               {selectedClientId ? (
                 viewMode === "clientDetails" ? (
                   <ClientDetails
@@ -746,18 +742,25 @@ const Dashboard = () => {
                     onBack={() => setSelectedClientId(null)}
                     onViewLoans={() => setViewMode("clientLoans")}
                   />
-                ) : (
+                ) : viewMode === "clientLoans" ? (
                   <ClientLoans
                     clientId={selectedClientId}
                     onBack={() => setViewMode("clientDetails")}
                     onViewLoanDetails={(loanId) => {
-                      // optional
+                      console.log("Clicked loanId:", loanId);
+                      setSelectedLoanId(loanId);
+                      setViewMode("loanDetails");
                     }}
                   />
-                )
+                ) : viewMode === "loanDetails" ? (
+                  <LoanDetailsShow
+                    loanId={selectedLoanId}
+                    onBack={() => setViewMode("clientLoans")}
+                  />
+                ) : null
               ) : (
-                //client list
                 <>
+                  {/* Client List */}
                   <div className="mb-6 flex justify-between items-center">
                     <h3 className="text-lg font-semibold">Client List</h3>
                     <button
@@ -769,12 +772,12 @@ const Dashboard = () => {
                     </button>
                   </div>
 
-                  {/* Conditionally render the AddClientForm */}
+                  {/* Add Client Form */}
                   {showForm && (
                     <AddClientForm onClientAdded={handleClientAdded} />
                   )}
 
-                  {/* Client list table */}
+                  {/* Client List Table */}
                   <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
@@ -836,13 +839,15 @@ const Dashboard = () => {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <button
-                                  onClick={() =>
-                                    setSelectedClientId(client._id)
-                                  }
+                                  onClick={() => {
+                                    setSelectedClientId(client._id);
+                                    setViewMode("clientDetails");
+                                  }}
                                   className="text-blue-600 hover:text-blue-900 mr-3"
                                 >
                                   View
                                 </button>
+
                                 <button
                                   onClick={() =>
                                     setAddingLoanClientId(client._id)
@@ -865,6 +870,7 @@ const Dashboard = () => {
                                     />
                                   </div>
                                 )}
+
                                 <button
                                   onClick={() => handleDeleteClient(client._id)}
                                   className="text-red-600 hover:text-red-900"

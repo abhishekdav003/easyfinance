@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { loanDetails } from "../../services/api.js";
+import LoanDetailsShow from "../details/LoanDetail.jsx";
+import { getLoanDetailsById } from "../../services/api.js";
 
-const ClientLoans = ({ clientId, onBack, onViewLoans }) => {
+const ClientLoans = ({ clientId, onBack, onViewLoanDetails }) => {
   const [loans, setLoans] = useState([]);
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+
   useEffect(() => {
+
     const fetchClientLoans = async () => {
       try {
         setLoading(true);
@@ -30,10 +34,12 @@ const ClientLoans = ({ clientId, onBack, onViewLoans }) => {
   }, [clientId]);
 
   const handleViewLoanDetails = (loanId) => {
-    if (onViewLoans) {
-      onViewLoans(loanId);
-    }
+    if (onViewLoanDetails) {
+          onViewLoanDetails(loanId);
+        }
   };
+
+  
 
   const formatCurrency = (amount) => {
     if (typeof amount !== 'number') return "₹0";

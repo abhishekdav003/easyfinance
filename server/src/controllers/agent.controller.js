@@ -117,9 +117,9 @@ export const collectEMI = asyncHandler(async (req, res) => {
     isSameDay(new Date(record.date), today)
   );
 
-  if (alreadyCollectedToday) {
-    throw new ApiError(400, "EMI already collected for today.");
-  }
+  // if (alreadyCollectedToday) {
+  //   throw new ApiError(400, "EMI already collected for today.");
+  // }
 
   const emiEntry = {
     date: today,
@@ -133,9 +133,34 @@ export const collectEMI = asyncHandler(async (req, res) => {
   loan.totalCollected += amountCollected;
   loan.totalAmountLeft -= amountCollected;
   loan.updatedAt = new Date();
+
+  // Calculate computed fields after EMI collection
+loan.paidEmis = loan.emiRecords.filter(e => e.status === "Paid").length;
+
+// Estimate total EMIs from tenure
+const totalEmis = loan.tenureMonths ?? loan.tenureDays ?? 0;
+loan.totalEmis = totalEmis;
+
+// Calculate next EMI date
+const nextDate = new Date();
+if (loan.emiType === "Monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+else if (loan.emiType === "Weekly") nextDate.setDate(nextDate.getDate() + 7);
+else if (loan.emiType === "Daily") nextDate.setDate(nextDate.getDate() + 1);
+loan.nextEmiDate = nextDate;
+
+// Compute interest and repayment
+loan.totalInterest = loan.totalPayable - loan.loanAmount;
+loan.totalRepayment = loan.totalPayable;
+console.log("Updated loan data:", loan);
   await client.save();
+  
+  const updatedLoan = client.loans.id(loanId);
 
   const agent = await Agent.findById(agentId);
+  console.log("EMI status received:", status);
+  console.log("All EMIs:", loan.emiRecords.map(e => e.status));
+  console.log("Paid EMIs:", loan.emiRecords.filter(e => e.status === "Paid").length);
+  
 
   const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${location.address}\n🙋‍♂️ *Collected By:* ${agent.fullname}`;
 
@@ -145,5 +170,6 @@ export const collectEMI = asyncHandler(async (req, res) => {
     body: messageBody,
   });
 
-  res.status(200).json(new ApiResponse(200, client, "EMI collected and recorded successfully"));
+  res.status(200).json(new ApiResponse(200, updatedLoan, "EMI collected and recorded successfully"));
 });
+
