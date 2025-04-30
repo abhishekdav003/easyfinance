@@ -95,7 +95,7 @@ export const agentLogout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "agent logged out successfully"));
 });
 
-//emi coleection
+//emi collection log 
 
 const clientTwilio = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM

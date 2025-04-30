@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const emiSchema = new mongoose.Schema({
   date: { type: Date, required: true },
   amountCollected: { type: Number, required: true },
-  status: { type: String, enum: ["Paid", "Defaulted"], default: "Paid" },
+  status: { type: String, enum: ["Paid", "Defaulted" , "Partial"], default: "Paid" },
   collectedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Agent" },
   location: {
     lat: Number,

@@ -226,7 +226,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
-  const [showAddLoanForm, setShowAddLoanForm] = useState(false);
+  // const [showAddLoanForm, setShowAddLoanForm] = useState(false);
   const [selectedLoanId, setSelectedLoanId] = useState(null);
 
   const navigate = useNavigate();
@@ -236,22 +236,14 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const analyticsResponse = await fetch("/api/admin/dashboard");
-        const clientsResponse = await fetch("/api/admin/allclients");
-
-        // Use your API service for fetching agents
+        const analyticsResponse = await getAdminDashboardAnalyticsData();
+        const clientsResponse = await getAllClients();
         const agentsResponse = await getAllAgents();
 
-        if (analyticsResponse.ok && clientsResponse.ok) {
-          const analyticsData = await analyticsResponse.json();
-          const clientsData = await clientsResponse.json();
-
-          setAnalytics(analyticsData.data);
-          setClients(clientsData.data);
-          setAgents(agentsResponse.data);
-        } else {
-          console.error("Failed to fetch dashboard data");
-        }
+        // ✅ Axios gives you the parsed response in `.data`
+        setAnalytics(analyticsResponse.data);
+        setClients(clientsResponse.data);
+        setAgents(agentsResponse.data);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {

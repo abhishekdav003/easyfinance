@@ -18,7 +18,15 @@ const ClientLoans = ({ clientId, onBack, onViewLoanDetails }) => {
         const response = await loanDetails(clientId);
         console.log("API Response for client loans:", response);
 
-        setLoans(response.data || []);
+        const updatedLoans = (response.data || []).map((loan) => {
+          const isLoanCompleted = loan.totalAmountLeft <= 0;
+          return {
+            ...loan,
+            status: isLoanCompleted ? "Completed" : loan.status,
+          };
+        });
+        setLoans(updatedLoans);
+        
         setClient(null); // No client data coming from backend currently
       } catch (err) {
         setError("Failed to fetch client loans: " + err.message);
