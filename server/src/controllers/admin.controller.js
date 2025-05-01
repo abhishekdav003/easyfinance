@@ -634,7 +634,7 @@ export const collectEMI = asyncHandler(async (req, res) => {
 
   loan.emiRecords.push(emiEntry);
   loan.totalCollected += amountCollected;
-  loan.totalAmountLeft -= amountCollected;
+  loan.totalAmountLeft = loan.totalPayable - loan.totalCollected;
   loan.updatedAt = new Date();
 
   // Calculate computed fields

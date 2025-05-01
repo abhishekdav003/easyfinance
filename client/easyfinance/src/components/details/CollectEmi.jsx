@@ -202,89 +202,116 @@ function CollectEMI({
     <div
       className={`flex flex-col ${
         !embedded ? "md:flex-row min-h-screen" : ""
-      } bg-blue-50`}
+      } bg-gradient-to-br from-blue-50 to-indigo-50 transition-all duration-300`}
     >
       {!embedded && <Sidebar activeItem="collections" />}
-      <div className="flex flex-1 justify-center items-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-blue-700 mb-6 text-center">
-            Collect EMI
-          </h2>
+      <div className="flex flex-1 justify-center items-center p-6">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 transform transition-all duration-300 hover:shadow-2xl">
+          <div className="flex items-center justify-center mb-6">
+            <div className="bg-blue-600 rounded-full p-3 mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-blue-700 text-center">
+              Collect EMI
+            </h2>
+          </div>
 
           {loading ? (
-            <div className="text-center text-blue-500">
-              Loading client details...
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+              <p className="text-blue-600 font-medium">Loading client details...</p>
             </div>
           ) : error ? (
-            <div className="text-red-500 text-center mb-4">{error}</div>
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6 animate-pulse">
+              <p className="font-medium">Error</p>
+              <p>{error}</p>
+            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-blue-600 mb-1">
+              <div className="transform transition-all duration-200 hover:translate-y-px">
+                <label className="block text-sm font-semibold text-blue-700 mb-2">
                   Client Name
                 </label>
                 <input
                   type="text"
                   value={client?.data?.clientName || ""}
                   readOnly
-                  className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-100"
+                  className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 shadow-sm transition-all duration-200"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-blue-600 mb-1">
+              <div className="transform transition-all duration-200 hover:translate-y-px">
+                <label className="block text-sm font-semibold text-blue-700 mb-2">
                   Loan Amount
                 </label>
                 <input
                   type="text"
                   value={loan?.loanAmount || ""}
                   readOnly
-                  className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-100"
+                  className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 shadow-sm transition-all duration-200"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-blue-600 mb-1">
+              <div className="transform transition-all duration-200 hover:translate-y-px">
+                <label className="block text-sm font-semibold text-blue-700 mb-2">
                   EMI Amount
                 </label>
-                <input
-                  type="number"
-                  name="amountCollected"
-                  value={formData.amountCollected}
-                  onChange={handleChange}
-                  placeholder="Enter EMI Amount"
-                  className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
+                  <input
+                    type="number"
+                    name="amountCollected"
+                    value={formData.amountCollected}
+                    onChange={handleChange}
+                    placeholder="Enter EMI Amount"
+                    className="w-full pl-8 pr-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 shadow-sm"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-blue-600 mb-1">
+              
+              <div className="transform transition-all duration-200 hover:translate-y-px">
+                <label className="block text-sm font-semibold text-blue-700 mb-2">
                   EMI Status
                 </label>
                 <select
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 shadow-sm appearance-none bg-white"
+                  style={{ backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"%232563EB\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg>')", backgroundRepeat: "no-repeat", backgroundPosition: "right 1rem center", paddingRight: "3rem" }}
                 >
                   <option value="Paid">Paid</option>
                   <option value="Defaulted">Defaulted</option>
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-blue-600 mb-1">
+              <div className="transform transition-all duration-200 hover:translate-y-px">
+                <label className=" text-sm font-semibold text-blue-700 mb-2 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                   Current Location
                 </label>
-                <input
-                  type="text"
-                  value={userLocation?.address || "Fetching location..."}
-                  readOnly
-                  className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-100"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={userLocation?.address || "Fetching location..."}
+                    readOnly
+                    className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 shadow-sm transition-all duration-200"
+                  />
+                  {gettingLocation && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {locationError && (
-                <div className="text-red-400 text-sm text-center">
+                <div className="text-red-500 text-sm px-3 py-2 bg-red-50 rounded-md border-l-4 border-red-500 animate-pulse">
                   {locationError}
                 </div>
               )}
@@ -292,14 +319,31 @@ function CollectEMI({
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-300"
+                className={`w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center ${submitting ? "opacity-75 cursor-not-allowed" : ""}`}
               >
-                {submitting ? "Submitting..." : "Collect EMI"}
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-3"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Collect EMI
+                  </>
+                )}
               </button>
 
               {success && (
-                <div className="text-green-500 text-center mt-2">
-                  EMI Collected Successfully!
+                <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-md animate-pulse">
+                  <div className="flex">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="font-medium">EMI Collected Successfully!</p>
+                  </div>
                 </div>
               )}
             </form>

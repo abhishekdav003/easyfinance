@@ -260,7 +260,7 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto relative">
+    <div className=  "bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto md:mb-2xl relative">
       {/* Close button in the top-right corner */}
       {onClose && (
         <button
