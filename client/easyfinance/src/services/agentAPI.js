@@ -22,7 +22,7 @@ export const getAllClients = async () => {
 // Get details for a specific client
 export const getClientDetails = async (clientId) => {
   try {
-    const response = await API.get(`/agent/clients/${clientId}`);
+    const response = await API.get(`/agent/getClientdata/${clientId}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
