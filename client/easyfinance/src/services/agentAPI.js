@@ -9,10 +9,9 @@ const API = axios.create({
 });
 
 // Get all clients for the agent
-export const getAllClients = async () => {
+export const getAllAgentClients = async () => {
   try {
-    const response = await API.get("/agent/allclients", {
-    });
+    const response = await API.get("/agent/allclients", {});
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
@@ -30,14 +29,7 @@ export const getClientDetails = async (clientId) => {
 };
 
 // Create a new client
-export const createClient = async (clientData) => {
-  try {
-    const response = await API.post("/agent/clients", clientData);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
+export const addClient = (data) => API.post("/admin/addclient", data);
 
 // Collect EMI from a client for a specific loan
 export const collectEmi = async (clientId, loanId, emiData) => {
@@ -106,7 +98,7 @@ export const logoutAgent = async () => {
 };
 
 // Get dashboard statistics
-export const getDashboardStats = async () => {
+export const getAgentDashboardAnalyticsData = async () => {
   try {
     const response = await API.get("/agent/dashboard/stats");
     return response.data;
