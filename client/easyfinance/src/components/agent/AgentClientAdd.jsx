@@ -13,7 +13,7 @@ import {
   AlertTriangle,
   XCircle,
 } from "lucide-react";
-import { registerClient } from "../../services/api";
+import { addClient } from "../../services/agentAPI";
 
 
 const AddClientForm = ({ onClientAdded, onClose }) => {
@@ -216,7 +216,7 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
       console.log("form data: ", formData);
 
       // Call the API function
-      const response = await registerClient(formToSend);
+      const response = await addClient(formToSend);
 
       // Handle successful response
       alert("Client added successfully!");

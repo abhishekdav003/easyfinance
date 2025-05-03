@@ -223,6 +223,8 @@ export const addClient = asyncHandler(async (req, res) => {
   const clientpic = await uploadOnCloudinary(req.file?.path);
 
   const creatorId = req.admin?._id || req.agent?._id;
+  console.log("🔁 creatorId:", creatorId);
+  
   if (!creatorId) {
     throw new ApiError(401, "Missing creator information (admin or agent).");
   }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { loginAdmin, loginAgent } from '../services/api'; // import your login service
+import { loginAdmin } from '../services/api'; // import your login service
+import { loginAgent } from '../services/agentAPI';
 
 const LoginPage = () => {
   const navigate = useNavigate();

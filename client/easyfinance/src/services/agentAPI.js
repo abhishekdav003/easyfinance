@@ -4,17 +4,65 @@ import axios from "axios";
 
 // Create axios instance with base URL for API
 const API = axios.create({
-  baseURL:"http://localhost:8000/api/v1",
-  withCredentials: true, // Important for cookies/sessions
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  withCredentials: true, // ✅ This sends cookies with every request
 });
 
 // Get all clients for the agent
+// export const getAllAgentClients = async () => {
+//   try {
+//     const response = await API.get("/agent/allclients", {});
+//     return response.data;
+//   } catch (error) {
+//     throw error.response?.data || error;
+//   }
+// };
+
+
+// Login Agent
+export const loginAgent = (data) => {
+  const isEmail = data.emailOrUsername.includes("@");
+
+  const payload = {
+    password: data.password,
+    ...(isEmail
+      ? { email: data.emailOrUsername }
+      : { agentusername: data.emailOrUsername }), // Use 'agentusername' for consistency with your backend
+  };
+
+  return API.post("/agent/login", payload)
+    .then((response) => {
+      // Handle successful login (status 200)
+      const { agent, accessToken, refreshToken } = response.data.data;
+
+      // Optionally, you can store these tokens in localStorage or state if you need them client-side:
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+
+      // Set the agent data in your app state (assuming you are using Redux or Context API)
+      // dispatch({ type: 'SET_AGENT', payload: agent }); // Example if using Redux
+
+      console.log('Agent logged in successfully:', agent);
+      // Redirect or trigger further actions, like going to a dashboard
+      // history.push("/dashboard");  // Example if using react-router
+
+      return response; // Return the response for further handling if needed
+    })
+    .catch((error) => {
+      // Handle errors, such as invalid credentials or server issues
+      console.error('Login failed:', error.response ? error.response.data.message : error.message);
+      throw new Error(error.response ? error.response.data.message : 'Something went wrong');
+    });
+};
 export const getAllAgentClients = async () => {
   try {
-    const response = await API.get("/agent/allclients", {});
+    const response = await API.get("/agent/allclients", {
+      withCredentials: true,
+    });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    console.error("Error fetching clients:", error);
+    throw error;
   }
 };
 
@@ -29,7 +77,7 @@ export const getClientDetails = async (clientId) => {
 };
 
 // Create a new client
-export const addClient = (data) => API.post("/admin/addclient", data);
+export const addClient = (data) => API.post("/agent/addclient", data);
 
 // Collect EMI from a client for a specific loan
 export const collectEmi = async (clientId, loanId, emiData) => {
@@ -77,15 +125,7 @@ export const updateAgentProfile = async (profileData) => {
   }
 };
 
-// Agent login
-export const loginAgent = async (credentials) => {
-  try {
-    const response = await API.post("/auth/login-agent", credentials);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || error;
-  }
-};
+
 
 // Agent logout
 export const logoutAgent = async () => {

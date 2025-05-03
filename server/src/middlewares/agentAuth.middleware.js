@@ -6,10 +6,11 @@ import { Agent } from "../models/agent.model.js";
 export const verifyAgentJwt = asyncHandler(async (req, res, next) => {
   try {
     const token = req.cookies?.accessToken || req.headers["authorization"]?.replace("Bearer ", "");
-
+   
     if (!token) {
       throw new ApiError(401, "Unauthorized request");
     }
+    
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
@@ -18,6 +19,7 @@ export const verifyAgentJwt = asyncHandler(async (req, res, next) => {
     if (!agent) {
       throw new ApiError(401, "Invalid Access Token");
     }
+    console.log("✅ Agent verified:", agent);
 
     req.agent = agent;
     next();

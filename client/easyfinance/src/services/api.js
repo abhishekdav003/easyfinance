@@ -25,41 +25,7 @@ export const registerAdmin = (data) => API.post("/admin/register", data);
 
 // import API from 'your-api-instance'; // Ajust to your API setup
 
-// Login Agent
-export const loginAgent = (data) => {
-  const isEmail = data.emailOrUsername.includes("@");
 
-  const payload = {
-    password: data.password,
-    ...(isEmail
-      ? { email: data.emailOrUsername }
-      : { agentusername: data.emailOrUsername }), // Use 'agentusername' for consistency with your backend
-  };
-
-  return API.post("/agent/login", payload)
-    .then((response) => {
-      // Handle successful login (status 200)
-      const { agent, accessToken, refreshToken } = response.data.data;
-
-      // Optionally, you can store these tokens in localStorage or state if you need them client-side:
-      // localStorage.setItem('accessToken', accessToken);
-      // localStorage.setItem('refreshToken', refreshToken);
-
-      // Set the agent data in your app state (assuming you are using Redux or Context API)
-      // dispatch({ type: 'SET_AGENT', payload: agent }); // Example if using Redux
-
-      console.log('Agent logged in successfully:', agent);
-      // Redirect or trigger further actions, like going to a dashboard
-      // history.push("/dashboard");  // Example if using react-router
-
-      return response; // Return the response for further handling if needed
-    })
-    .catch((error) => {
-      // Handle errors, such as invalid credentials or server issues
-      console.error('Login failed:', error.response ? error.response.data.message : error.message);
-      throw new Error(error.response ? error.response.data.message : 'Something went wrong');
-    });
-};
 
 
 
