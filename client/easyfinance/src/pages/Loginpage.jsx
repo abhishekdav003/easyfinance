@@ -25,8 +25,11 @@ const LoginPage = () => {
         console.log('Logging in with:', formData, 'as', loginType);
 
         let res;
+
         if (loginType === 'admin') {
           res = await loginAdmin(formData); // Admin login request
+                  console.log("Agent login response:", res.data);
+
           localStorage.setItem('admin', JSON.stringify(res.data.data));  // Store admin data
           navigate('/admin-dashboard');
         } else if (loginType === 'agent') {
