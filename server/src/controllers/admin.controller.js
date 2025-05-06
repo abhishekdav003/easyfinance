@@ -199,7 +199,7 @@ export const agentList = asyncHandler(async (req, res) => {
 
 // add a client
 export const addClient = asyncHandler(async (req, res) => {
-  const { clientName, clientPhone, clientAddress, clientPhoto, email } = req.body;
+  const { clientName, clientPhone, temporaryAddress, permanentAddress , shopAddress , houseAddress ,clientPhoto, shopPhoto , housePhoto , documents ,email } = req.body;
 
   let loans = [];
   if (req.body.loans) {
@@ -220,7 +220,20 @@ export const addClient = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Client already exists");
   }
 
-  const clientpic = await uploadOnCloudinary(req.file?.path);
+  const clientpic = await uploadOnCloudinary(req.files?.clientPhoto?.[0]?.path);
+  const shoppic  = await uploadOnCloudinary(req.files?.shopPhoto?.[0]?.path);
+  const housepic = await uploadOnCloudinary(req.files?.housePhoto?.[0]?.path);
+  const document = await uploadOnCloudinary(req.files?.documents?.[0]?.path);
+
+  const documentFiles = req.files?.documents || [];
+  const documentUrls = [];
+  for (const file of documentFiles) {
+    const uploaded = await uploadOnCloudinary(file.path);
+    if (uploaded?.url) {
+      documentUrls.push(uploaded.url);
+    }
+  }
+
 
   const creatorId = req.admin?._id || req.agent?._id;
   console.log("🔁 creatorId:", creatorId);
@@ -297,8 +310,15 @@ export const addClient = asyncHandler(async (req, res) => {
   const newClient = await Client.create({
     clientName,
     clientPhone,
-    clientAddress,
+    temporaryAddress, 
+    permanentAddress ,
+    shopAddress ,
+     houseAddress,
     clientPhoto: clientpic?.url || "",
+    shopPhoto: shoppic?.url || "",
+    housePhoto: housepic?.url || "",
+    documents: document?.url || "",
+    documents: documentUrls,
     loans: processedLoans,
     email,
   });
@@ -309,11 +329,45 @@ export const addClient = asyncHandler(async (req, res) => {
 });
 
 
+// update client details 
+export const updatedClient = asyncHandler(async (req, res) => {
+  const { clientId } = req.params;
+  const {
+    clientName,
+    clientPhone,
+    temporaryAddress,
+    permanentAddress,
+    shopAddress,
+    houseAddress,
+    email
+  } = req.body;
 
+  const updatedClient = await Client.findByIdAndUpdate(
+    clientId,
+    {
+      clientName,
+      clientPhone,
+      temporaryAddress,
+      permanentAddress,
+      shopAddress,
+      houseAddress,
+      email
+    },
+    { new: true }
+  );
 
+  if (!updatedClient) {
+    throw new ApiError(404, "Client not found or could not be updated");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, updatedClient, "Client updated successfully"));
+});
 
 
 //remove a client
+
 export const removeClient = asyncHandler(async (req, res) => {
   const { clientId } = req.params;
 

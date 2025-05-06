@@ -12,23 +12,38 @@ import {
   Save,
   AlertTriangle,
   XCircle,
+  Mail,
+  Home,
+  Store,
+  FileText,
 } from "lucide-react";
 import { registerClient } from "../../services/api";
-
 
 const AddClientForm = ({ onClientAdded, onClose }) => {
   const [formData, setFormData] = useState({
     clientName: "",
     clientPhone: "",
-    clientAddress: "",
-    clientPhoto: "",
+    temporaryAddress: "",
+    permanentAddress: "",
+    shopAddress: "",
+    houseAddress: "",
+    clientPhoto: null,
+    shopPhoto: null,
+    housePhoto: null,
+    documents: [],
     loans: [],
     email: "",
   });
 
-  const [previewImage, setPreviewImage] = useState(null);
+  const [previewImages, setPreviewImages] = useState({
+    clientPhoto: null,
+    shopPhoto: null,
+    housePhoto: null,
+  });
+  
+  const [documentPreviews, setDocumentPreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState("clientInfo"); // "clientInfo" or "loans"
+  const [activeTab, setActiveTab] = useState("clientInfo"); // "clientInfo", "addressInfo", "photoDocuments", or "loans"
   const [phoneError, setPhoneError] = useState("");
   const [nameError, setNameError] = useState("");
   const [showNoLoanWarning, setShowNoLoanWarning] = useState(false);
@@ -47,20 +62,54 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
     if (apiError) setApiError("");
   };
 
-  const handlePicChange = (e) => {
+  const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
       setFormData((prev) => ({
         ...prev,
-        clientPhoto: file,
+        [fieldName]: file,
       }));
 
       // Create image preview
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewImage(reader.result);
+        if (fieldName === "clientPhoto" || fieldName === "shopPhoto" || fieldName === "housePhoto") {
+          setPreviewImages(prev => ({
+            ...prev,
+            [fieldName]: reader.result
+          }));
+        }
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDocumentsChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      // Limit to 10 documents maximum
+      const limitedFiles = files.slice(0, 10);
+      
+      setFormData((prev) => ({
+        ...prev,
+        documents: [...limitedFiles],
+      }));
+
+      // Create previews for documents
+      const newPreviews = [];
+      limitedFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newPreviews.push({
+            name: file.name,
+            url: reader.result
+          });
+          if (newPreviews.length === limitedFiles.length) {
+            setDocumentPreviews(newPreviews);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
@@ -97,6 +146,20 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
       ...prev,
       loans: updatedLoans,
     }));
+  };
+
+  const removeDocument = (index) => {
+    const updatedDocuments = [...formData.documents];
+    updatedDocuments.splice(index, 1);
+    
+    const updatedPreviews = [...documentPreviews];
+    updatedPreviews.splice(index, 1);
+    
+    setFormData(prev => ({
+      ...prev,
+      documents: updatedDocuments
+    }));
+    setDocumentPreviews(updatedPreviews);
   };
 
   const validateForm = () => {
@@ -175,7 +238,23 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
 
   const handleNextStep = () => {
     if (validateForm()) {
-      setActiveTab("loans");
+      if (activeTab === "clientInfo") {
+        setActiveTab("addressInfo");
+      } else if (activeTab === "addressInfo") {
+        setActiveTab("photoDocuments");
+      } else if (activeTab === "photoDocuments") {
+        setActiveTab("loans");
+      }
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (activeTab === "loans") {
+      setActiveTab("photoDocuments");
+    } else if (activeTab === "photoDocuments") {
+      setActiveTab("addressInfo");
+    } else if (activeTab === "addressInfo") {
+      setActiveTab("clientInfo");
     }
   };
 
@@ -198,22 +277,44 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
 
     try {
       const formToSend = new FormData();
+      
+      // Add client information
       formToSend.append("clientName", formData.clientName);
       formToSend.append("clientPhone", formData.clientPhone);
-      formToSend.append("clientAddress", formData.clientAddress);
       formToSend.append("email", formData.email);
+      
+      // Add address information
+      formToSend.append("temporaryAddress", formData.temporaryAddress);
+      formToSend.append("permanentAddress", formData.permanentAddress);
+      formToSend.append("shopAddress", formData.shopAddress);
+      formToSend.append("houseAddress", formData.houseAddress);
+      
+      // Add photos
+      if (formData.clientPhoto) {
+        formToSend.append("clientPhoto", formData.clientPhoto);
+      }
+      
+      if (formData.shopPhoto) {
+        formToSend.append("shopPhoto", formData.shopPhoto);
+      }
+      
+      if (formData.housePhoto) {
+        formToSend.append("housePhoto", formData.housePhoto);
+      }
+      
+      // Add documents
+      if (formData.documents.length > 0) {
+        formData.documents.forEach(doc => {
+          formToSend.append("documents", doc);
+        });
+      }
 
       // Convert loans array to JSON string as required by the API
       if (formData.loans.length > 0) {
         formToSend.append("loans", JSON.stringify(formData.loans));
       }
 
-      // Only append file if it exists
-      if (formData.clientPhoto) {
-        formToSend.append("file", formData.clientPhoto);
-      }
-
-      console.log("form data: ", formData);
+      console.log("Submitting form data");
 
       // Call the API function
       const response = await registerClient(formToSend);
@@ -225,12 +326,23 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
       setFormData({
         clientName: "",
         clientPhone: "",
-        clientAddress: "",
+        temporaryAddress: "",
+        permanentAddress: "",
+        shopAddress: "",
+        houseAddress: "",
         clientPhoto: null,
+        shopPhoto: null,
+        housePhoto: null,
+        documents: [],
         loans: [],
         email: "",
       });
-      setPreviewImage(null);
+      setPreviewImages({
+        clientPhoto: null,
+        shopPhoto: null,
+        housePhoto: null,
+      });
+      setDocumentPreviews([]);
 
       // Notify parent component
       if (onClientAdded) onClientAdded();
@@ -261,7 +373,7 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
   };
 
   return (
-    <div className=  "bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto md:mb-2xl relative">
+    <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl mx-auto md:mb-2xl relative">
       {/* Close button in the top-right corner */}
       {onClose && (
         <button
@@ -286,7 +398,7 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b mb-6">
+      <div className="flex flex-wrap border-b mb-6">
         <button
           className={`py-2 px-4 font-medium ${
             activeTab === "clientInfo"
@@ -295,7 +407,27 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
           }`}
           onClick={() => setActiveTab("clientInfo")}
         >
-          Client Information
+          Client Info
+        </button>
+        <button
+          className={`py-2 px-4 font-medium ${
+            activeTab === "addressInfo"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+          onClick={() => setActiveTab("addressInfo")}
+        >
+          Addresses
+        </button>
+        <button
+          className={`py-2 px-4 font-medium ${
+            activeTab === "photoDocuments"
+              ? "text-blue-600 border-b-2 border-blue-600"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+          onClick={() => setActiveTab("photoDocuments")}
+        >
+          Photos & Documents
         </button>
         <button
           className={`py-2 px-4 font-medium ${
@@ -317,101 +449,57 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
         {/* Client Information Tab */}
         {activeTab === "clientInfo" && (
           <div className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Client Photo Upload */}
-              <div className="w-full md:w-1/3 flex flex-col items-center">
-                <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 mb-2">
-                  {previewImage ? (
-                    <img
-                      src={previewImage}
-                      alt="Client"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User size={40} className="text-gray-400" />
-                  )}
+            <div className="w-full space-y-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User size={18} className="text-gray-400" />
                 </div>
-                <label className="flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 rounded-md cursor-pointer hover:bg-blue-100 transition">
-                  <Upload size={16} className="mr-2" />
-                  Upload Photo
-                  <input
-                    type="file"
-                    onChange={handlePicChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </label>
-                <p className="text-xs text-gray-500 mt-1">Photo is optional</p>
+                <input
+                  name="clientName"
+                  value={formData.clientName}
+                  onChange={handleChange}
+                  placeholder="Client Name"
+                  className={`pl-10 w-full py-3 px-4 border ${
+                    nameError ? "border-red-500" : "border-gray-300"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                  required
+                />
+                {nameError && (
+                  <p className="mt-1 text-sm text-red-500">{nameError}</p>
+                )}
               </div>
 
-              {/* Client Details */}
-              <div className="w-full md:w-2/3 space-y-4">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User size={18} className="text-gray-400" />
-                  </div>
-                  <input
-                    name="clientName"
-                    value={formData.clientName}
-                    onChange={handleChange}
-                    placeholder="Client Name"
-                    className={`pl-10 w-full py-3 px-4 border ${
-                      nameError ? "border-red-500" : "border-gray-300"
-                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
-                    required
-                  />
-                  {nameError && (
-                    <p className="mt-1 text-sm text-red-500">{nameError}</p>
-                  )}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone size={18} className="text-gray-400" />
                 </div>
+                <input
+                  name="clientPhone"
+                  value={formData.clientPhone}
+                  onChange={handleChange}
+                  placeholder="Phone Number"
+                  className={`pl-10 w-full py-3 px-4 border ${
+                    phoneError ? "border-red-500" : "border-gray-300"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                  required
+                />
+                {phoneError && (
+                  <p className="mt-1 text-sm text-red-500">{phoneError}</p>
+                )}
+              </div>
 
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Phone size={18} className="text-gray-400" />
-                  </div>
-                  <input
-                    name="clientPhone"
-                    value={formData.clientPhone}
-                    onChange={handleChange}
-                    placeholder="Phone Number"
-                    className={`pl-10 w-full py-3 px-4 border ${
-                      phoneError ? "border-red-500" : "border-gray-300"
-                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
-                    required
-                  />
-                  {phoneError && (
-                    <p className="mt-1 text-sm text-red-500">{phoneError}</p>
-                  )}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail size={18} className="text-gray-400" />
                 </div>
-
-                {/* Client Email (NEW FIELD) */}
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User size={18} className="text-gray-400" />
-                  </div>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Email Address"
-                    className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                  />
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin size={18} className="text-gray-400" />
-                  </div>
-                  <input
-                    name="clientAddress"
-                    value={formData.clientAddress}
-                    onChange={handleChange}
-                    placeholder="Address"
-                    className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    required
-                  />
-                </div>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email Address"
+                  className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                />
               </div>
             </div>
 
@@ -425,6 +513,267 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                   Cancel
                 </button>
               )}
+              <button
+                type="button"
+                className="py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+                onClick={handleNextStep}
+              >
+                Next: Addresses
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Address Information Tab */}
+        {activeTab === "addressInfo" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-700 mb-2">Temporary Address</h3>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPin size={18} className="text-gray-400" />
+                  </div>
+                  <textarea
+                    name="temporaryAddress"
+                    value={formData.temporaryAddress}
+                    onChange={handleChange}
+                    placeholder="Enter temporary address"
+                    className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    rows="3"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-700 mb-2">Permanent Address</h3>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Home size={18} className="text-gray-400" />
+                  </div>
+                  <textarea
+                    name="permanentAddress"
+                    value={formData.permanentAddress}
+                    onChange={handleChange}
+                    placeholder="Enter permanent address"
+                    className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    rows="3"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-700 mb-2">Shop Address</h3>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Store size={18} className="text-gray-400" />
+                  </div>
+                  <textarea
+                    name="shopAddress"
+                    value={formData.shopAddress}
+                    onChange={handleChange}
+                    placeholder="Enter shop address"
+                    className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    rows="3"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-700 mb-2">House Address</h3>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Home size={18} className="text-gray-400" />
+                  </div>
+                  <textarea
+                    name="houseAddress"
+                    value={formData.houseAddress}
+                    onChange={handleChange}
+                    placeholder="Enter house address"
+                    className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    rows="3"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <button
+                type="button"
+                className="py-2 px-6 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition"
+                onClick={handlePreviousStep}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+                onClick={handleNextStep}
+              >
+                Next: Photos & Documents
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Photos & Documents Tab */}
+        {activeTab === "photoDocuments" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Client Photo */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-700 mb-2">Client Photo</h3>
+                <div className="flex flex-col items-center">
+                  <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 mb-2">
+                    {previewImages.clientPhoto ? (
+                      <img
+                        src={previewImages.clientPhoto}
+                        alt="Client"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User size={40} className="text-gray-400" />
+                    )}
+                  </div>
+                  <label className="flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 rounded-md cursor-pointer hover:bg-blue-100 transition">
+                    <Upload size={16} className="mr-2" />
+                    Upload Photo
+                    <input
+                      type="file"
+                      onChange={(e) => handleFileChange(e, "clientPhoto")}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Photo is optional</p>
+                </div>
+              </div>
+
+              {/* Shop Photo */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-700 mb-2">Shop Photo</h3>
+                <div className="flex flex-col items-center">
+                  <div className="w-32 h-32 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 mb-2">
+                    {previewImages.shopPhoto ? (
+                      <img
+                        src={previewImages.shopPhoto}
+                        alt="Shop"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Store size={40} className="text-gray-400" />
+                    )}
+                  </div>
+                  <label className="flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 rounded-md cursor-pointer hover:bg-blue-100 transition">
+                    <Upload size={16} className="mr-2" />
+                    Upload Photo
+                    <input
+                      type="file"
+                      onChange={(e) => handleFileChange(e, "shopPhoto")}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Photo is optional</p>
+                </div>
+              </div>
+
+              {/* House Photo */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-700 mb-2">House Photo</h3>
+                <div className="flex flex-col items-center">
+                  <div className="w-32 h-32 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 mb-2">
+                    {previewImages.housePhoto ? (
+                      <img
+                        src={previewImages.housePhoto}
+                        alt="House"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Home size={40} className="text-gray-400" />
+                    )}
+                  </div>
+                  <label className="flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 rounded-md cursor-pointer hover:bg-blue-100 transition">
+                    <Upload size={16} className="mr-2" />
+                    Upload Photo
+                    <input
+                      type="file"
+                      onChange={(e) => handleFileChange(e, "housePhoto")}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">Photo is optional</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Documents Section */}
+            <div className="mt-8">
+              <h3 className="font-medium text-gray-700 mb-4">Documents</h3>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50">
+                <div className="flex flex-col items-center">
+                  <FileText size={40} className="text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500 mb-4">
+                    Upload client documents (ID proof, address proof, etc.)
+                  </p>
+                  <label className="flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 rounded-md cursor-pointer hover:bg-blue-100 transition">
+                    <Upload size={16} className="mr-2" />
+                    Select Files
+                    <input
+                      type="file"
+                      onChange={handleDocumentsChange}
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      multiple
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Max 10 documents
+                  </p>
+                </div>
+
+                {/* Document Preview List */}
+                {documentPreviews.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-sm text-gray-700 mb-2">
+                      Selected Documents ({documentPreviews.length})
+                    </h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {documentPreviews.map((doc, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-2 bg-white rounded border border-gray-200"
+                        >
+                          <div className="flex items-center overflow-hidden">
+                            <FileText size={16} className="text-gray-400 mr-2 flex-shrink-0" />
+                            <span className="text-sm truncate max-w-xs">{doc.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeDocument(index)}
+                            className="text-gray-500 hover:text-red-500"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-4">
+              <button
+                type="button"
+                className="py-2 px-6 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition"
+                onClick={handlePreviousStep}
+              >
+                Back
+              </button>
               <button
                 type="button"
                 className="py-2 px-6 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
@@ -448,171 +797,219 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                     size={20}
                   />
                   <div>
-                    <h3 className="font-medium text-yellow-800">
-                      Create client without loans?
+                  <h3 className="font-medium text-yellow-800">
+                      Creating a client without any loans
                     </h3>
-                    <p className="text-yellow-700 text-sm mt-1">
-                      You're about to create a client without any loans. Click
-                      Submit again to confirm, or add a loan below.
+                    <p className="text-sm text-yellow-700 mt-1">
+                      You are about to create a client record without any loans.
+                      Are you sure you want to proceed?
                     </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {formData.loans.map((loan, i) => (
-              <div
-                key={i}
-                className="p-4 border border-gray-200 rounded-lg bg-gray-50 relative"
-              >
-                <button
-                  type="button"
-                  onClick={() => handleRemoveLoan(i)}
-                  className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
-                  title="Remove Loan"
-                >
-                  <X size={18} />
-                </button>
-
-                <h3 className="font-medium text-gray-700 mb-4">
-                  Loan #{i + 1}
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <IndianRupee size={18} className="text-gray-400" />
-                    </div>
-                    <input
-                      value={loan.loanAmount}
-                      onChange={(e) =>
-                        handleLoanChange(i, "loanAmount", e.target.value)
-                      }
-                      placeholder="Loan Amount"
-                      className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                      required={formData.loans.length > 0}
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Percent size={18} className="text-gray-400" />
-                    </div>
-                    <input
-                      value={loan.interestRate}
-                      onChange={(e) =>
-                        handleLoanChange(i, "interestRate", e.target.value)
-                      }
-                      placeholder="Interest Rate (%)"
-                      className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                      required={formData.loans.length > 0}
-                    />
-                  </div>
-
-                  <div className="relative">
-                    <select
-                      value={loan.emiType}
-                      onChange={(e) =>
-                        handleLoanChange(i, "emiType", e.target.value)
-                      }
-                      className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none bg-white"
-                    >
-                      <option value="Daily">Daily</option>
-                      <option value="Weekly">Weekly</option>
-                      <option value="Monthly">Monthly</option>
-                      <option value="Full Payment">Full Payment</option>
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <svg
-                        className="w-5 h-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
+                    <div className="mt-3 flex space-x-3">
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="px-3 py-1.5 text-sm bg-yellow-100 text-yellow-800 rounded border border-yellow-300 hover:bg-yellow-200 transition"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        ></path>
-                      </svg>
+                        Proceed without loans
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowNoLoanWarning(false)}
+                        className="px-3 py-1.5 text-sm bg-white text-gray-600 rounded border border-gray-300 hover:bg-gray-50 transition"
+                      >
+                        Cancel
+                      </button>
                     </div>
-                  </div>
-
-                  {loan.emiType === "Monthly" ? (
-                    <div className="relative">
-                      <input
-                        value={loan.tenureMonths}
-                        onChange={(e) =>
-                          handleLoanChange(i, "tenureMonths", e.target.value)
-                        }
-                        placeholder="Tenure (Months)"
-                        className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                        required={loan.emiType === "Monthly" && !loan.tenureDays}
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <input
-                        value={loan.tenureDays}
-                        onChange={(e) =>
-                          handleLoanChange(i, "tenureDays", e.target.value)
-                        }
-                        placeholder="Tenure (Days)"
-                        className="w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                        required={
-                          loan.emiType === "Daily" || 
-                          loan.emiType === "Weekly" || 
-                          loan.emiType === "Full Payment" ||
-                          (loan.emiType === "Monthly" && !loan.tenureMonths)
-                        }
-                      />
-                    </div>
-                  )}
-
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Calendar size={18} className="text-gray-400" />
-                    </div>
-                    <input
-                      type="date"
-                      value={loan.startDate}
-                      onChange={(e) =>
-                        handleLoanChange(i, "startDate", e.target.value)
-                      }
-                      className="pl-10 w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    />
                   </div>
                 </div>
               </div>
-            ))}
+            )}
 
-            <button
-              type="button"
-              onClick={handleAddLoan}
-              className="flex items-center justify-center py-2 px-4 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
-            >
-              <Plus size={16} className="mr-2" />
-              Add Loan
-            </button>
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <h3 className="font-semibold text-blue-800 mb-2">Loan Details</h3>
+              <p className="text-sm text-blue-700">
+                Add all loans for this client. You can add multiple loans with
+                different terms.
+              </p>
+            </div>
 
-            {formData.loans.length === 0 && !showNoLoanWarning && (
-              <div className="text-sm text-gray-500 italic">
-                * You can submit the form without adding any loans if needed.
+            {/* Loan List */}
+            {formData.loans.length > 0 ? (
+              <div className="space-y-8">
+                {formData.loans.map((loan, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-50 border border-gray-200 rounded-lg p-4 relative"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLoan(index)}
+                      className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                      aria-label="Remove loan"
+                    >
+                      <X size={20} />
+                    </button>
+
+                    <h4 className="font-medium text-gray-700 mb-4">
+                      Loan #{index + 1}
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Loan Amount */}
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <IndianRupee size={18} className="text-gray-400" />
+                        </div>
+                        <input
+                          type="number"
+                          value={loan.loanAmount}
+                          onChange={(e) =>
+                            handleLoanChange(
+                              index,
+                              "loanAmount",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Loan Amount"
+                          className="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                          required
+                        />
+                      </div>
+
+                      {/* Interest Rate */}
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Percent size={18} className="text-gray-400" />
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={loan.interestRate}
+                          onChange={(e) =>
+                            handleLoanChange(
+                              index,
+                              "interestRate",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Interest Rate (%)"
+                          className="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                          required
+                        />
+                      </div>
+
+                      {/* EMI Type */}
+                      <div>
+                        <select
+                          value={loan.emiType}
+                          onChange={(e) =>
+                            handleLoanChange(index, "emiType", e.target.value)
+                          }
+                          className="w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                          required
+                        >
+                          <option value="Daily">Daily</option>
+                          <option value="Weekly">Weekly</option>
+                          <option value="Monthly">Monthly</option>
+                          <option value="Full Payment">Full Payment</option>
+                        </select>
+                      </div>
+
+                      {/* Start Date */}
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <Calendar size={18} className="text-gray-400" />
+                        </div>
+                        <input
+                          type="date"
+                          value={loan.startDate}
+                          onChange={(e) =>
+                            handleLoanChange(
+                              index,
+                              "startDate",
+                              e.target.value
+                            )
+                          }
+                          className="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                          required
+                        />
+                      </div>
+
+                      {/* Tenure Days */}
+                      <div>
+                        <input
+                          type="number"
+                          value={loan.tenureDays}
+                          onChange={(e) =>
+                            handleLoanChange(
+                              index,
+                              "tenureDays",
+                              e.target.value
+                            )
+                          }
+                          placeholder="Tenure (Days)"
+                          className="w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                          required={
+                            loan.emiType === "Daily" ||
+                            loan.emiType === "Weekly" ||
+                            loan.emiType === "Full Payment"
+                          }
+                        />
+                      </div>
+
+                      {/* Tenure Months (only for Monthly EMI) */}
+                      {loan.emiType === "Monthly" && (
+                        <div>
+                          <input
+                            type="number"
+                            value={loan.tenureMonths}
+                            onChange={(e) =>
+                              handleLoanChange(
+                                index,
+                                "tenureMonths",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Tenure (Months)"
+                            className="w-full py-2 px-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 bg-gray-50 border border-gray-200 border-dashed rounded-lg">
+                <div className="text-center text-gray-500">
+                  <IndianRupee size={32} className="mx-auto mb-2" />
+                  <p className="mb-4">No loans added yet</p>
+                </div>
               </div>
             )}
 
-            <div className="flex justify-between pt-4">
+            {/* Add Loan Button */}
+            <div className="flex justify-center mt-6">
+              <button
+                type="button"
+                onClick={handleAddLoan}
+                className="flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+              >
+                <Plus size={18} className="mr-1" />
+                Add Loan
+              </button>
+            </div>
+
+            <div className="flex justify-between pt-8">
               <button
                 type="button"
                 className="py-2 px-6 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition"
-                onClick={() => setActiveTab("clientInfo")}
+                onClick={handlePreviousStep}
               >
-                Back to Client Info
+                Back
               </button>
 
-              <div className="space-x-3">
+              <div className="flex gap-3">
                 {onClose && (
                   <button
                     type="button"
@@ -622,11 +1019,10 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                     Cancel
                   </button>
                 )}
-
                 <button
                   type="submit"
+                  className="flex items-center justify-center py-2 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition"
                   disabled={isSubmitting}
-                  className="py-2 px-6 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition flex items-center"
                 >
                   {isSubmitting ? (
                     <>
@@ -650,12 +1046,12 @@ const AddClientForm = ({ onClientAdded, onClose }) => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Submitting...
+                      Saving...
                     </>
                   ) : (
                     <>
-                      <Save size={16} className="mr-2" />
-                      Submit
+                      <Save size={18} className="mr-1" />
+                      Save Client
                     </>
                   )}
                 </button>

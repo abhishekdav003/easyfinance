@@ -45,8 +45,14 @@ const loanSchema = new mongoose.Schema({
 const clientSchema = new mongoose.Schema({
   clientName: { type: String, required: true },
   clientPhone: { type: String, required: true, unique: true },
-  clientAddress: { type: String },
+  temporaryAddress: { type: String },
+  permanentAddress: { type: String },
+  shopAddress: { type: String },
+  houseAddress: { type: String },
   clientPhoto: { type: String },
+  housePhoto: { type: String },
+  shopPhoto: { type: String },
+  documents:[{type: String}],
   email: { type: String },
   loans: [loanSchema], // array of loans
   createdAt: { type: Date, default: Date.now }

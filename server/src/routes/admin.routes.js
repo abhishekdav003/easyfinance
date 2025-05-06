@@ -69,7 +69,13 @@ router.route("/getagentdetails/:agentId").get(verifyAdminJwt , agentDetails)
 router.route("/dashboard").get(verifyAdminJwt , getAdminDashboardAnalytics) 
 
 // admin add client ✅
-router.route("/addclient").post(upload.single("file") , verifyAdminJwt , addClient) 
+router.route("/addclient").post(upload.fields([
+  { name: "clientPhoto", maxCount: 1 },
+  { name: "shopPhoto", maxCount: 1 },
+  { name: "housePhoto", maxCount: 1 },
+  { name: "documents", maxCount: 10 },
+]) , verifyAdminJwt , addClient) 
+
 
 
 // loan details ✅
