@@ -199,7 +199,7 @@ export const agentList = asyncHandler(async (req, res) => {
 
 // add a client
 export const addClient = asyncHandler(async (req, res) => {
-  const { clientName, clientPhone, temporaryAddress, permanentAddress , shopAddress , houseAddress ,clientPhoto, shopPhoto , housePhoto , documents ,email } = req.body;
+  const { clientName, clientPhoneNumbers, temporaryAddress, permanentAddress , shopAddress , houseAddress ,clientPhoto, shopPhoto , housePhoto , documents ,email , referalName , referalNumber , location } = req.body;
 
   let loans = [];
   if (req.body.loans) {
@@ -211,9 +211,13 @@ export const addClient = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Invalid format for loans");
     }
   }
-
+  let googleMapsLink = "";
+if (location?.coordinates?.length === 2) {
+  const [lng, lat] = location.coordinates;
+  googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+}
   const existingClient = await Client.findOne({
-    $or: [{ clientPhone }, { clientName }],
+    $or: [{ clientPhoneNumbers }, { clientName }],
   });
 
   if (existingClient) {
@@ -251,13 +255,15 @@ export const addClient = asyncHandler(async (req, res) => {
       emiType,
       startDate = new Date()
     } = loan;
+    
 
+    
     const principal = Number(loanAmount);
     const rate = Number(interestRate);
     const totalTenureDays = Number(tenureDays || 0);
     const totalTenureMonths = Number(tenureMonths || 0);
     const tenureInYears = totalTenureMonths ? totalTenureMonths / 12 : totalTenureDays / 365;
-   
+    
     const interest = (loanAmount * interestRate * tenureInYears) / 100;
     const totalPayable = principal + interest;
     const disbursedAmount = principal - interest;
@@ -268,7 +274,7 @@ export const addClient = asyncHandler(async (req, res) => {
     if (isNaN(dueDate.getTime())) {
       throw new ApiError(400, "Invalid due date calculated from tenure");
     }
-
+   
     // ✅ EMI calculation based on total repayment
     let emiAmount = 0;
     if (emiType === "Daily") {
@@ -309,7 +315,7 @@ export const addClient = asyncHandler(async (req, res) => {
 
   const newClient = await Client.create({
     clientName,
-    clientPhone,
+    clientPhoneNumbers,
     temporaryAddress, 
     permanentAddress ,
     shopAddress ,
@@ -321,6 +327,11 @@ export const addClient = asyncHandler(async (req, res) => {
     documents: documentUrls,
     loans: processedLoans,
     email,
+    referalName,
+    referalNumber,
+    googleMapsLink,
+    location
+
   });
 
   return res.status(201).json(

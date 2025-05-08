@@ -44,7 +44,9 @@ const loanSchema = new mongoose.Schema({
 // Main Client Schema
 const clientSchema = new mongoose.Schema({
   clientName: { type: String, required: true },
-  clientPhone: { type: String, required: true, unique: true },
+  clientPhoneNumbers: [{ type: String, required: true, unique: true }],
+  referalName: { type: String },
+  referalNumber: { type: String },
   temporaryAddress: { type: String },
   permanentAddress: { type: String },
   shopAddress: { type: String },
@@ -55,7 +57,12 @@ const clientSchema = new mongoose.Schema({
   documents:[{type: String}],
   email: { type: String },
   loans: [loanSchema], // array of loans
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  location: {
+    lat: Number,
+    lng: Number,
+    address: String,
+  },
 });
 
 const Client = mongoose.model("Client", clientSchema);

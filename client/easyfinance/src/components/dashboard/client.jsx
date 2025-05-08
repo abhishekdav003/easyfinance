@@ -264,14 +264,14 @@ const ClientManagement = ({
                         <div className={`text-xs md:text-sm ${
                           darkMode ? 'text-gray-300' : 'text-gray-900'
                         }`}>
-                          {client.clientPhone}
+                          {client.clientPhoneNumbers[0]}
                         </div>
                       </td>
                       <td className={`hidden md:table-cell px-6 py-4 whitespace-nowrap text-sm ${
                         darkMode ? 'text-gray-300' : 'text-gray-900'
                       }`}>
                         <div>
-                          {client.clientAddress}
+                          {client.permanentAddress}
                         </div>
                       </td>
                       <td className="px-3 py-2 md:px-6 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium relative">

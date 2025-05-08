@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import { getClientDetailsById } from "../../services/api.js";
 import { motion } from "framer-motion";
 import { Loader, X } from "lucide-react";
+import { Phone } from "lucide-react";
+import { Users } from "lucide-react";
+import LocationDisplay from "./LocationDisplay.jsx";
+
+
 
 const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
   const [client, setClient] = useState(null);
@@ -346,12 +351,25 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
                 {client.clientName || "N/A"}
               </span>
             </div>
-            <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
-              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Phone:</span>
-              <span className="font-medium">
-                {client.clientPhone || "N/A"}
-              </span>
-            </div>
+            <div className={`flex flex-col ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+  <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Phone Numbers:</span>
+  <div className="space-y-2">
+    {/* Display all phone numbers from the array */}
+    {client.clientPhoneNumbers && client.clientPhoneNumbers.length > 0 ? (
+      client.clientPhoneNumbers.map((phone, index) => (
+        <div className="flex items-center" key={index}>
+          <Phone size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+          <span className="font-medium">{phone}</span>
+        </div>
+      ))
+    ) : (
+      <div className="flex items-center">
+        <Phone size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+        <span className="font-medium">N/A</span>
+      </div>
+    )}
+  </div>
+</div>
             <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
               <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Email:</span>
               <span className="font-medium">{client.email || "N/A"}</span>
@@ -453,7 +471,44 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
           </div>
         </div>
       </motion.div>
-      
+      <LocationDisplay
+  onLocationFetched={(loc) =>
+    setFormData((prev) => ({
+      ...prev,
+      location: loc,
+    }))
+  }
+/>
+
+      {/* Referral Information - NEW SECTION */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.65, duration: 0.5 }}
+        className={`mt-6 ${darkMode 
+          ? 'bg-gray-800/80 border-gray-700 hover:shadow-lg hover:shadow-blue-900/10' 
+          : 'bg-white border-gray-100 hover:shadow-md'} 
+          p-4 md:p-6 rounded-xl shadow-sm border transition-shadow duration-300`}
+      >
+        <h2 className="text-lg font-semibold mb-4 flex items-center">
+          <Users className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+          Referral Information
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+            <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Referral Name:</span>
+            <span className="font-medium">
+              {client.referalName || "N/A"}
+            </span>
+          </div>
+          <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+            <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Referral Phone:</span>
+            <span className="font-medium">
+              {client.referalNumber || "N/A"}
+            </span>
+          </div>
+        </div>
+      </motion.div>
       {/* Photo Gallery */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
@@ -585,7 +640,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
         </motion.div>
       )}
 
-     {/* Notes Section */}
+     {/* Notes Section
 {client.notes && (
   <motion.div 
     initial={{ y: 20, opacity: 0 }}
@@ -606,7 +661,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
       {client.notes || "No notes available."}
     </div>
   </motion.div>
-)}
+)} */}
 
 
 {/* Action Buttons */}
