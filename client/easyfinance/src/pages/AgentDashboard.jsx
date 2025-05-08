@@ -1,423 +1,189 @@
-import React, { useState, useEffect } from "react";
-import {
-  getAllAgentClients,
-  getAgentDashboardAnalyticsData,
-  collectEmi,
-  logoutAgent,
-} from "../services/agentAPI.js";
-import { useNavigate } from "react-router-dom";
-import DashboardOverview from "../components/agent/AgentdashOverview.jsx";
-import ClientManagement from "../components/agent/AgentClientComponent.jsx";
-import EmiCollection from "../components/details/CollectEmi";
-import ResponsiveSidebar from "../components/agent/sidebarAgent";
-import {
-  Loader,
-  Moon,
-  Sun,
-  BarChart3,
-  Users,
-  Wallet,
-  Bell,
-  Menu,
-} from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Search, UserPlus, Eye } from 'lucide-react';
+import AddClientModal from '../model/AddClientModel';
+import CollectEmiModal from '../model/CollectEmiModel';
+import ViewClientModal from '../model/ViewClientModel';
+import { searchClients } from '../services/agentAPI';
 
-const AgentDashboard = () => {
-  // State management
-  const [analytics, setAnalytics] = useState({
-    totalClientsAssigned: 0,
-    totalEmiCollected: 0,
-    totalAmountCollected: 0,
-    pendingEmis: 0,
-    defaulterCount: 0,
-  });
-  const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState("dashboard");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClientId, setSelectedClientId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [collectingEmiClientId, setCollectingEmiClientId] = useState(null);
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [viewMode, setViewMode] = useState("clientDetails");
-  const [selectedLoanId, setSelectedLoanId] = useState(null);
-  const [addingLoanClientId, setAddingLoanClientId] = useState(null);
+export default function AgentDashboard() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+  const [isViewClientModalOpen, setIsViewClientModalOpen] = useState(false);
+  const [isCollectEmiModalOpen, setIsCollectEmiModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [selectedLoan, setSelectedLoan] = useState(null);
 
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== "undefined" ? window.innerWidth : 1200,
-    height: typeof window !== "undefined" ? window.innerHeight : 800,
-  });
+  // Function to handle search
+  const handleSearch = async (e) => {
+  e.preventDefault();
+  if (!searchTerm.trim()) return;
 
-  const navigate = useNavigate();
-
-  // Window resize handler for responsiveness
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Initial data loading and theme setup
-  useEffect(() => {
-    // Check if user has a preferred theme stored or use system preference
-    const savedTheme = localStorage.getItem("theme");
-    if (
-      savedTheme === "dark" ||
-      (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
-
-    // Add CSS variable for blur backdrop support
-    document.documentElement.style.setProperty(
-      "--blur-bg",
-      "rgba(255, 255, 255, 0.7)"
-    );
-    document.documentElement.style.setProperty(
-      "--blur-bg-dark",
-      "rgba(17, 24, 39, 0.75)"
-    );
-
-    // Fetch dashboard data
-    fetchDashboardData();
-
-    // Dummy notifications - would come from backend in real implementation
-    setNotifications([
-      {
-        id: 1,
-        message: "Client Rahul has an EMI due today",
-        time: "2 hours ago",
-      },
-      { id: 2, message: "New client assigned to you", time: "Yesterday" },
-      {
-        id: 3,
-        message: "EMI collection target reached 75%",
-        time: "3 days ago",
-      },
-    ]);
-  }, []);
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-
-      const analyticsResponse = await getAgentDashboardAnalyticsData();
-
-      const clientsResponse = await getAllAgentClients();
-
-      setAnalytics(analyticsResponse.data);
-      setClients(clientsResponse.data);
-    } catch (error) {
-      console.error("❌ Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-
-    if (newDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
+  setIsLoading(true);
+  try {
+    const data = await searchClients(searchTerm);
+    if (data.success) {
+      setSearchResults(data.data || []);
     } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
+      console.error("Search failed:", data.message);
+      setSearchResults([]);
     }
-  };
-
-  const handleClientAdded = () => {
-    setShowForm(false);
-    fetchClients();
-  };
-
-  const handleEmiCollected = async (clientId, amount, emiDate) => {
-    try {
-      await collectEmi(clientId, { amount, date: emiDate });
-      alert("EMI collected successfully!");
-      setCollectingEmiClientId(null);
-      fetchDashboardData(); // Refresh data after EMI collection
-    } catch (error) {
-      console.error("Error collecting EMI:", error);
-      alert(
-        `Failed to collect EMI: ${
-          error.response?.data?.message || error.message
-        }`
-      );
-    }
-  };
-
-  const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      try {
-        await logoutAgent();
-        alert("Logged out successfully!");
-        window.location.href = "/login";
-      } catch (error) {
-        console.error("Logout failed:", error);
-        alert(
-          `Failed to logout: ${error.response?.data?.message || error.message}`
-        );
-      }
-    }
-  };
-
-  const fetchClients = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllAgentClients();
-      setClients(response.data);
-    } catch (error) {
-      console.error("Failed to fetch clients:", error);
-      alert(
-        `Error fetching clients: ${
-          error.response?.data?.message || error.message
-        }`
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearchClients = async () => {
-    if (!searchTerm.trim()) {
-      fetchClients();
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await searchClients(searchTerm);
-      setClients(response.data);
-    } catch (error) {
-      console.error("Error searching clients:", error);
-      alert(`Search failed: ${error.response?.data?.message || error.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Filter clients based on search term (client-side filtering)
-  const filteredClients = clients.filter(
-    (client) =>
-      client.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.clientPhone?.includes(searchTerm) ||
-      client.clientAddress?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div
-        className={`flex items-center justify-center h-screen ${
-          darkMode
-            ? "bg-gradient-to-br from-gray-900 to-gray-800 text-white"
-            : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900"
-        }`}
-      >
-        <div className="flex flex-col items-center backdrop-blur-sm p-8 rounded-xl shadow-lg bg-white/10 dark:bg-gray-800/30">
-          <Loader
-            size={48}
-            className={`animate-spin ${
-              darkMode ? "text-blue-400" : "text-blue-500"
-            } mb-4`}
-          />
-          <div className="text-xl font-semibold">
-            Loading agent dashboard...
-          </div>
-        </div>
-      </div>
-    );
+  } catch (error) {
+    console.error("Search error:", error);
+    setSearchResults([]);
+  } finally {
+    setIsLoading(false);
   }
-
-  const viewIcons = {
-    dashboard: <BarChart3 size={20} />,
-    clients: <Users size={20} />,
-    emiCollection: <Wallet size={20} />,
-  };
-
-  // Determine if we're on mobile view
-  const isMobile = windowSize.width < 1024;
-
-  return (
-    <div
-      className={`flex flex-col min-h-screen transition-all duration-300 ${
-        darkMode
-          ? "bg-gradient-to-br from-gray-900 to-gray-800 text-white"
-          : "bg-gradient-to-br from-gray-100 to-gray-200 text-gray-900"
-      }`}
-    >
-      {/* Responsive Sidebar Component */}
-      <ResponsiveSidebar
-        activeView={activeView}
-        setActiveView={setActiveView}
-        handleLogout={handleLogout}
-        darkMode={darkMode}
-      />
-
-      {/* Main Content Container */}
-      <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
-          isMobile ? "ml-0" : "ml-64"
-        }`}
-      >
-        {/* Content Area */}
-        <div className="flex-1 overflow-auto">
-          {/* Top Bar */}
-          <div
-            className={`sticky top-0 p-4 backdrop-blur-md backdrop-filter flex justify-between items-center z-10 ${
-              darkMode
-                ? "bg-gray-800/70 border-b border-gray-700 shadow-lg"
-                : "bg-white/70 border-b border-gray-200 shadow-sm"
-            }`}
-          >
-            <div className="flex items-center">
-              {/* Space for hamburger menu on mobile */}
-              {isMobile && <div className="w-8 mr-2"></div>}
-
-              {viewIcons[activeView] && (
-                <span
-                  className={`mr-2 ${
-                    darkMode ? "text-blue-400" : "text-blue-600"
-                  }`}
-                >
-                  {viewIcons[activeView]}
-                </span>
-              )}
-              <h2 className="text-xl font-semibold truncate">
-                {activeView === "dashboard" && "Agent Dashboard"}
-                {activeView === "clients" && "Client Management"}
-                {activeView === "emiCollection" && "EMI Collection"}
-              </h2>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <div className="relative">
-                <button
-                  className={`p-2 rounded-full relative ${
-                    darkMode
-                      ? "bg-gray-700/80 text-blue-300 hover:bg-gray-600"
-                      : "bg-gray-200/80 text-blue-600 hover:bg-gray-300/80"
-                  }`}
-                  aria-label="Notifications"
-                >
-                  <Bell size={20} />
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full">
-                    {notifications.length}
-                  </span>
-                </button>
-              </div>
-
-              <button
-                onClick={toggleDarkMode}
-                className={`p-2 rounded-full transition-all duration-300 ${
-                  darkMode
-                    ? "bg-gray-700/80 text-yellow-300 hover:bg-gray-600 hover:text-yellow-200"
-                    : "bg-gray-200/80 text-gray-700 hover:bg-gray-300/80 hover:text-gray-900"
-                }`}
-                aria-label={
-                  darkMode ? "Switch to light mode" : "Switch to dark mode"
-                }
-              >
-                {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
-
-              <div className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center mr-2 ${
-                    darkMode
-                      ? "bg-gradient-to-r from-green-600 to-teal-600"
-                      : "bg-gradient-to-r from-green-500 to-teal-500"
-                  } text-white shadow-md`}
-                >
-                  A
-                </div>
-                <span
-                  className={`${darkMode ? "text-gray-200" : "text-gray-700"} ${
-                    isMobile ? "hidden" : "block"
-                  }`}
-                >
-                  Agent
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content with Glass Effect - Scrollable Area */}
-          <div className="p-4">
-            <div
-              className={`rounded-xl ${
-                darkMode
-                  ? "bg-gray-800/30 shadow-xl backdrop-blur-md backdrop-filter"
-                  : "bg-white/60 shadow-lg backdrop-blur-md backdrop-filter"
-              } p-4`}
-            >
-              {/* Dashboard Content */}
-              {activeView === "dashboard" && (
-                <DashboardOverview
-                  analytics={analytics}
-                  notifications={notifications}
-                  darkMode={darkMode}
-                  transparentCharts={true}
-                />
-              )}
-
-              {/* Clients View */}
-
-              {activeView === "clients" && (
-                <>
-                  <p className="text-sm text-gray-500 mb-2">
-                    Showing {filteredClients.length} clients
-                  </p>
-                  <ClientManagement
-                    clients={filteredClients}
-                    selectedClientId={selectedClientId}
-                    setSelectedClientId={setSelectedClientId}
-                    viewMode={viewMode}
-                    setViewMode={setViewMode}
-                    showForm={showForm}
-                    setShowForm={setShowForm}
-                    handleClientAdded={handleClientAdded}
-                    handleDeleteClient={() => {}} // placeholder
-                    addingLoanClientId={addingLoanClientId}
-                    setAddingLoanClientId={setAddingLoanClientId}
-                    fetchClients={fetchClients}
-                    selectedLoanId={selectedLoanId}
-                    setSelectedLoanId={setSelectedLoanId}
-                    darkMode={darkMode}
-                    isMobile={isMobile}
-                  />
-                </>
-              )}
-
-              {/* EMI Collection View */}
-              {activeView === "emiCollection" && (
-                <EmiCollection
-                  clients={filteredClients}
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  handleSearchClients={handleSearchClients}
-                  collectingEmiClientId={collectingEmiClientId}
-                  setCollectingEmiClientId={setCollectingEmiClientId}
-                  handleEmiCollected={handleEmiCollected}
-                  darkMode={darkMode}
-                  isMobile={isMobile}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 };
 
-export default AgentDashboard;
+
+  // Function to view client details
+  const handleViewClient = (client) => {
+    setSelectedClient(client);
+    setIsViewClientModalOpen(true);
+  };
+
+  // Function to collect EMI
+  const handleCollectEmi = (client, loan) => {
+    setSelectedClient(client);
+    setSelectedLoan(loan);
+    setIsCollectEmiModalOpen(true);
+    setIsViewClientModalOpen(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">Agent Dashboard</h1>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          {/* Search and Add Client Section */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="w-full sm:w-2/3">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search client by name..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch(e);
+                    }
+                  }}
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-500 hover:text-blue-700"
+                >
+                  Search
+                </button>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setIsAddClientModalOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
+            >
+              <UserPlus className="h-5 w-5" />
+              Add Client
+            </button>
+          </div>
+
+          {/* Search Results */}
+          <div className="mt-8">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : searchResults.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Client Name
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone Number
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {searchResults.map((client) => (
+                      <tr key={client._id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {client.clientName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {client.clientPhone}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <button
+                            onClick={() => handleViewClient(client)}
+                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : searchTerm.trim() ? (
+              <div className="text-center py-8 text-gray-500">
+                No clients found with the name "{searchTerm}"
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Search for clients by name to view their details
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* Modals */}
+      {isAddClientModalOpen && (
+        <AddClientModal 
+          isOpen={isAddClientModalOpen} 
+          onClose={() => setIsAddClientModalOpen(false)} 
+        />
+      )}
+
+      {isViewClientModalOpen && selectedClient && (
+        <ViewClientModal
+          isOpen={isViewClientModalOpen}
+          onClose={() => setIsViewClientModalOpen(false)}
+          client={selectedClient}
+          onCollectEmi={handleCollectEmi}
+        />
+      )}
+
+      {isCollectEmiModalOpen && selectedClient && selectedLoan && (
+        <CollectEmiModal
+          isOpen={isCollectEmiModalOpen}
+          onClose={() => setIsCollectEmiModalOpen(false)}
+          client={selectedClient}
+          loan={selectedLoan}
+        />
+      )}
+    </div>
+  );
+}

@@ -3,8 +3,8 @@ import {
   agentLogin,
   agentLogout,
   collectEMI,
-  AgentaddClient
-
+  AgentaddClient,
+  searchClients,
 } from "../controllers/agent.controller.js";
 import{
   clientList,
@@ -26,7 +26,8 @@ agentRoute.route("/logout").post(verifyAgentJwt , agentLogout);
 agentRoute.route("/allclients").get(verifyAgentJwt , clientList) 
 agentRoute.route("/getClientdata/:clientId").get(verifyAgentJwt , clientDetails) 
 agentRoute.route("/collectemi/:clientId/:loanId").post(verifyAgentJwt , collectEMI); 
-agentRoute.route("/addclient").post(upload.single("file") , verifyAgentJwt , AgentaddClient) 
+agentRoute.route("/addclient").post(upload.single("file"), verifyAgentJwt, AgentaddClient) 
+agentRoute.route("/search-clients").get(verifyAgentJwt, searchClients);
 
 
 export default agentRoute
