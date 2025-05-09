@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Search, UserPlus, Eye } from 'lucide-react';
-import AddClientForm from '../components/forms/ClientRegistration';
+import AgentAddClientForm from '../components/forms/AgentClientRegForm';
 import { getAllAgentClients } from '../services/agentAPI';
+ import { addClient } from "../services/agentAPI"; 
 // import ViewClientModal from '../model/ViewClientModel';
 // import CollectEmiModal from '../model/CollectEmiModel';
 
@@ -16,25 +17,27 @@ export default function AgentDashboard() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedLoan, setSelectedLoan] = useState(null);
 
-  useEffect(() => {
-    const fetchClients = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getAllAgentClients();
-        if (data.success) {
-          setClients(data.data || []);
-          setFilteredClients([]); // ⛔ Don't show anything initially
-        } else {
-          console.error("Failed to load clients:", data.message);
-        }
-      } catch (error) {
-        console.error("Error loading clients:", error);
-      } finally {
-        setIsLoading(false);
+
+  const fetchClients = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAllAgentClients();
+      if (data.success) {
+        setClients(data.data || []);
+        setFilteredClients([]);
+      } else {
+        console.error("Failed to load clients:", data.message);
       }
-    };
-    fetchClients();
-  }, []);
+    } catch (error) {
+      console.error("Error loading clients:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+ 
+useEffect(() => {
+  fetchClients();
+}, []);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -162,10 +165,12 @@ export default function AgentDashboard() {
 
       {/* Modals */}
       {isAddClientModalOpen && (
-        <AddClientForm
-          isOpen={isAddClientModalOpen}
-          onClose={() => setIsAddClientModalOpen(false)}
-        />
+       <AgentAddClientForm
+       isOpen={isAddClientModalOpen}
+       onClose={() => setIsAddClientModalOpen(false)}
+       onSubmit={addClient} // <- pass agent-specific API
+       onClientAdded={fetchClients}
+     />
       )}
 
       {/* Optional View/EMI modals */}

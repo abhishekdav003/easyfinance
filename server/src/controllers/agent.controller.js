@@ -206,33 +206,181 @@ console.log("Updated loan data:", loan);
   res.status(200).json(new ApiResponse(200, updatedLoan, "EMI collected and recorded successfully"));
 });
 
+// export const AgentaddClient = asyncHandler(async (req, res) => {
+//   const { clientName, clientPhone, clientAddress, clientPhoto, email } = req.body;
+//   let loans = [];
+//   if (req.body.loans) {
+//     try {
+//       loans = typeof req.body.loans === "string"
+//         ? JSON.parse(req.body.loans)
+//         : req.body.loans;
+//     } catch (error) {
+//       throw new ApiError(400, "Invalid format for loans");
+//     }
+//   }
+
+//   const existingClient = await Client.findOne({
+//     $or: [{ clientPhone }, { clientName }],
+//   });
+
+//   if (existingClient) {
+//     throw new ApiError(400, "Client already exists");
+//   }
+
+//   const clientpic = await uploadOnCloudinary(req.file?.path);
+//   console.log(req);
+  
+//   const creatorId = req.admin?._id || req.agent?._id;
+//   console.log("🔁 creatorId:", creatorId);
+  
+//   if (!creatorId) {
+//     throw new ApiError(401, "Missing creator information (admin or agent).");
+//   }
+
+//   const processedLoans = loans.map((loan) => {
+//     const {
+//       loanAmount,
+//       interestRate,
+//       tenureDays,
+//       tenureMonths,
+//       emiType,
+//       startDate = new Date()
+//     } = loan;
+
+//     const principal = Number(loanAmount);
+//     const rate = Number(interestRate);
+//     const totalTenureDays = Number(tenureDays || 0);
+//     const totalTenureMonths = Number(tenureMonths || 0);
+//     const tenureInYears = totalTenureMonths ? totalTenureMonths / 12 : totalTenureDays / 365;
+   
+//     const interest = (loanAmount * interestRate * tenureInYears) / 100;
+//     const totalPayable = principal + interest;
+//     const disbursedAmount = principal - interest;
+//     const totalAmountLeft = totalPayable;
+
+//     const start = new Date(startDate);
+//     const dueDate = new Date(start.getTime() + totalTenureDays * 24 * 60 * 60 * 1000);
+//     if (isNaN(dueDate.getTime())) {
+//       throw new ApiError(400, "Invalid due date calculated from tenure");
+//     }
+
+//     // ✅ EMI calculation based on total repayment
+//     let emiAmount = 0;
+//     if (emiType === "Daily") {
+//       emiAmount = totalTenureDays ? totalPayable / totalTenureDays : totalPayable;
+//     } else if (emiType === "Weekly") {
+//       const weeks = Math.ceil(totalTenureDays / 7) || 1;
+//       emiAmount = totalPayable / weeks;
+//     } else if (emiType === "Monthly") {
+//       const months = totalTenureMonths || Math.floor(totalTenureDays / 30) || 1;
+//       emiAmount = totalPayable / months;
+//     } else if (emiType === "Full Payment") {
+//       emiAmount = totalPayable;
+//     }
+
+//     emiAmount = Math.round(emiAmount);
+
+//     return {
+//       uniqueLoanNumber: uuidv4(),
+//       loanAmount: principal,
+//       disbursedAmount,
+//       interestRate: rate,
+//       tenureDays: totalTenureDays,
+//       tenureMonths: totalTenureMonths,
+//       emiType,
+//       emiAmount,
+//       totalPayable,
+//       totalCollected: 0,
+//       totalAmountLeft,
+//       startDate: start,
+//       dueDate,
+//       emiRecords: [],
+//       status: "Ongoing",
+//       createdAt: new Date(),
+//       updatedAt: new Date(),
+//       createdBy: creatorId
+//     };
+//   });
+
+//   const newClient = await Client.create({
+//     clientName,
+//     clientPhone,
+//     clientAddress,
+//     clientPhoto: clientpic?.url || "",
+//     loans: processedLoans,
+//     email,
+//   });
+
+//   return res.status(201).json(
+//     new ApiResponse(201, { newClient }, "Client and loan(s) added successfully")
+//   );
+// });
+
 export const AgentaddClient = asyncHandler(async (req, res) => {
-  const { clientName, clientPhone, clientAddress, clientPhoto, email } = req.body;
+  const {
+    clientName,
+    clientPhoneNumbers,
+    temporaryAddress,
+    permanentAddress,
+    shopAddress,
+    houseAddress,
+    email,
+    referalName,
+    referalNumber,
+  } = req.body;
+
+  // ✅ Extract lat/lng from req.body and build location object
+  const latitude = req.body.latitude;
+  const longitude = req.body.longitude;
+
+  const location =
+    latitude && longitude
+      ? {
+          lat: Number(latitude),
+          lng: Number(longitude),
+          address: `Lat: ${latitude}, Lng: ${longitude}`,
+        }
+      : null;
+
   let loans = [];
   if (req.body.loans) {
     try {
-      loans = typeof req.body.loans === "string"
-        ? JSON.parse(req.body.loans)
-        : req.body.loans;
+      loans =
+        typeof req.body.loans === "string"
+          ? JSON.parse(req.body.loans)
+          : req.body.loans;
     } catch (error) {
       throw new ApiError(400, "Invalid format for loans");
     }
   }
 
+  let googleMapsLink = "";
+  if (latitude && longitude) {
+    googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+  }
+
   const existingClient = await Client.findOne({
-    $or: [{ clientPhone }, { clientName }],
+    $or: [{ clientPhoneNumbers }, { clientName }],
   });
 
   if (existingClient) {
     throw new ApiError(400, "Client already exists");
   }
 
-  const clientpic = await uploadOnCloudinary(req.file?.path);
-  console.log(req);
-  
+  const clientpic = await uploadOnCloudinary(req.files?.clientPhoto?.[0]?.path);
+  const shoppic = await uploadOnCloudinary(req.files?.shopPhoto?.[0]?.path);
+  const housepic = await uploadOnCloudinary(req.files?.housePhoto?.[0]?.path);
+
+  const documentFiles = req.files?.documents || [];
+  const documentUrls = [];
+  for (const file of documentFiles) {
+    const uploaded = await uploadOnCloudinary(file.path);
+    if (uploaded?.url) {
+      documentUrls.push(uploaded.url);
+    }
+  }
+
   const creatorId = req.admin?._id || req.agent?._id;
-  console.log("🔁 creatorId:", creatorId);
-  
   if (!creatorId) {
     throw new ApiError(401, "Missing creator information (admin or agent).");
   }
@@ -244,27 +392,30 @@ export const AgentaddClient = asyncHandler(async (req, res) => {
       tenureDays,
       tenureMonths,
       emiType,
-      startDate = new Date()
+      startDate = new Date(),
     } = loan;
 
     const principal = Number(loanAmount);
     const rate = Number(interestRate);
     const totalTenureDays = Number(tenureDays || 0);
     const totalTenureMonths = Number(tenureMonths || 0);
-    const tenureInYears = totalTenureMonths ? totalTenureMonths / 12 : totalTenureDays / 365;
-   
-    const interest = (loanAmount * interestRate * tenureInYears) / 100;
+    const tenureInYears = totalTenureMonths
+      ? totalTenureMonths / 12
+      : totalTenureDays / 365;
+
+    const interest = (principal * rate * tenureInYears) / 100;
     const totalPayable = principal + interest;
     const disbursedAmount = principal - interest;
     const totalAmountLeft = totalPayable;
 
     const start = new Date(startDate);
-    const dueDate = new Date(start.getTime() + totalTenureDays * 24 * 60 * 60 * 1000);
+    const dueDate = new Date(
+      start.getTime() + totalTenureDays * 24 * 60 * 60 * 1000
+    );
     if (isNaN(dueDate.getTime())) {
       throw new ApiError(400, "Invalid due date calculated from tenure");
     }
 
-    // ✅ EMI calculation based on total repayment
     let emiAmount = 0;
     if (emiType === "Daily") {
       emiAmount = totalTenureDays ? totalPayable / totalTenureDays : totalPayable;
@@ -298,20 +449,32 @@ export const AgentaddClient = asyncHandler(async (req, res) => {
       status: "Ongoing",
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: creatorId
+      createdBy: creatorId,
     };
   });
 
   const newClient = await Client.create({
     clientName,
-    clientPhone,
-    clientAddress,
+    clientPhoneNumbers,
+    temporaryAddress,
+    permanentAddress,
+    shopAddress,
+    houseAddress,
     clientPhoto: clientpic?.url || "",
+    shopPhoto: shoppic?.url || "",
+    housePhoto: housepic?.url || "",
+    documents: documentUrls,
     loans: processedLoans,
     email,
+    referalName,
+    referalNumber,
+    googleMapsLink,
+    location, // ✅ Location now saved correctly
   });
 
-  return res.status(201).json(
-    new ApiResponse(201, { newClient }, "Client and loan(s) added successfully")
-  );
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, { newClient }, "Client and loan(s) added successfully")
+    );
 });
