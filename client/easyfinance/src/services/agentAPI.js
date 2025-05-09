@@ -1,4 +1,3 @@
-// services/agentAPI.js
 
 import axios from "axios";
 
@@ -8,15 +7,6 @@ const API = axios.create({
   withCredentials: true, // ✅ This sends cookies with every request
 });
 
-// Get all clients for the agent
-// export const getAllAgentClients = async () => {
-//   try {
-//     const response = await API.get("/agent/allclients", {});
-//     return response.data;
-//   } catch (error) {
-//     throw error.response?.data || error;
-//   }
-// };
 
 
 // Login Agent
@@ -136,6 +126,22 @@ export const logoutAgent = async () => {
     throw error.response?.data || error;
   }
 };
+
+// Search clients by name
+export const searchClients = async (searchTerm) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await API.get(`/agent/search-clients?query=${searchTerm}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
 
 // Get dashboard statistics
 export const getAgentDashboardAnalyticsData = async () => {

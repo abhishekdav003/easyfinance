@@ -70,6 +70,38 @@ export const agentLogin = asyncHandler(async (req, res) => {
     );
 });
 
+// In controllers/agent.controller.js or create a new function in admin.controller.js
+
+export const searchClients = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: "Search query is required"
+      });
+    }
+    
+    // Assuming you have a Client model
+    const clients = await Client.find({
+      clientName: { $regex: query, $options: 'i' } // Case-insensitive search
+    }).select('clientName clientPhone email _id'); // Select only necessary fields
+    
+    return res.status(200).json({
+      success: true,
+      data: clients
+    });
+  } catch (error) {
+    console.error("Search error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error searching clients",
+      error: error.message
+    });
+  }
+};
+
 /// === agent logout
 export const agentLogout = asyncHandler(async (req, res) => {
   await Agent.findByIdAndUpdate(
