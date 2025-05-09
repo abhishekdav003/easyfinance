@@ -1,170 +1,121 @@
-import React, { useState, useEffect } from "react";
-import { Map, Navigation, Loader2, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import { MapPin, Navigation, RefreshCw, ExternalLink } from "lucide-react";
 
-const LocationDisplay = ({ onLocationFetched }) => {
-  const [gettingLocation, setGettingLocation] = useState(false);
-  const [locationError, setLocationError] = useState(null);
-  const [location, setLocation] = useState(null);
+// Fix default marker icon (Leaflet quirk)
+delete L.Icon.Default.prototype._getIconUrl;
 
-  const getLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by this browser.");
-      return;
-    }
+// Custom location marker icon
+const locationIcon = new L.Icon({
+  iconUrl: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjU2M0VCIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9ImZlYXRoZXIgZmVhdGhlci1tYXAtcGluIj48cGF0aCBkPSJNMjEgMTBjMCA3LTkgMTMtOSAxM3MtOS02LTktMTNhOSA5IDAgMCAxIDE4IDB6Ij48L3BhdGg+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMCIgcj0iMyIgZmlsbD0iIzI1NjNFQiI+PC9jaXJjbGU+PC9zdmc+",
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32]
+});
 
-    // Reset states
-    setGettingLocation(true);
-    setLocationError(null);
-    
-    // Set a backup timeout in case the geolocation API doesn't respond properly
-    const timeoutId = setTimeout(() => {
-      if (gettingLocation) {
-        setLocationError("Location request timed out. Please try again.");
-        setGettingLocation(false);
-      }
-    }, 15000); // 15 seconds backup timeout
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        clearTimeout(timeoutId);
-        
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-
-        const address = `Lat: ${coords.lat.toFixed(6)}, Lng: ${coords.lng.toFixed(6)}`;
-        const coordinates = [coords.lng, coords.lat];
-
-        const locationData = {
-          address,
-          coordinates,
-        };
-
-        setLocation(locationData);
-        if (typeof onLocationFetched === 'function') {
-          onLocationFetched(locationData);
-        }
-        setGettingLocation(false);
-      },
-      (err) => {
-        clearTimeout(timeoutId);
-        
-        // More user-friendly error messages
-        let errorMessage;
-        switch(err.code) {
-          case 1: // PERMISSION_DENIED
-            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
-            break;
-          case 2: // POSITION_UNAVAILABLE
-            errorMessage = "Your location information is unavailable. Please check your device's GPS.";
-            break;
-          case 3: // TIMEOUT
-            errorMessage = "Location request timed out. Please try again.";
-            break;
-          default:
-            errorMessage = `Error getting location: ${err.message}`;
-        }
-        
-        setLocationError(errorMessage);
-        setGettingLocation(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
-  };
-
-  // Show status/help message when appropriate
-  const [showHelp, setShowHelp] = useState(false);
+const LocationDisplay = ({ location }) => {
+  const [isLoading, setIsLoading] = useState(true);
   
+  // Simulate loading
   useEffect(() => {
-    // Display help message after 5 seconds of loading with no error
-    let helpTimer;
-    if (gettingLocation && !locationError) {
-      helpTimer = setTimeout(() => {
-        setShowHelp(true);
-      }, 5000);
-    } else {
-      setShowHelp(false);
-    }
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
     
-    return () => {
-      clearTimeout(helpTimer);
-    };
-  }, [gettingLocation, locationError]);
-  
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 flex flex-col items-center justify-center h-96">
+        <RefreshCw className="animate-spin text-blue-600 dark:text-blue-400 mb-3" size={32} />
+        <p className="text-gray-700 dark:text-gray-300">Loading location data...</p>
+      </div>
+    );
+  }
+
+  if (!location?.lat || !location?.lng) {
+    return (
+      <div className="w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="flex items-center justify-center flex-col gap-3 h-64">
+          <div className="rounded-full bg-red-100 dark:bg-red-900 p-3">
+            <MapPin className="text-red-500 dark:text-red-300" size={24} />
+          </div>
+          <h3 className="text-lg font-medium text-red-500 dark:text-red-300">Location Not Available</h3>
+          <p className="text-sm text-center text-gray-600 dark:text-gray-400">
+            We couldn't access your location information. Please check your permissions and try again.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full max-w-md mx-auto rounded-xl shadow-lg overflow-hidden bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
-      <div className="p-6">
-        <div className="flex items-center mb-4">
-          <Navigation className="h-6 w-6 text-blue-600 dark:text-blue-400 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Location Finder</h2>
+    <div className="w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div className="p-4 bg-blue-600">
+        <div className="flex items-center">
+          <Navigation className="text-white mr-3" size={24} />
+          <h2 className="text-xl font-semibold text-white">
+            Your Location
+          </h2>
+        </div>
+      </div>
+      
+      <div className="relative" style={{ height: "380px", width: "100%" }}>
+        <MapContainer
+          center={[location.lat, location.lng]}
+          zoom={15}
+          style={{ height: "100%", width: "100%" }}
+          scrollWheelZoom={false}
+          className="z-0"
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Circle
+            center={[location.lat, location.lng]}
+            radius={100}
+            pathOptions={{ fillColor: '#2563eb', fillOpacity: 0.1, color: '#2563eb', weight: 1 }}
+          />
+          <Marker position={[location.lat, location.lng]} icon={locationIcon}>
+            <Popup className="custom-popup">
+              <div className="font-medium">{location.address || "Your current location"}</div>
+            </Popup>
+          </Marker>
+        </MapContainer>
+      </div>
+      
+      <div className="p-4 bg-gray-900 text-white">
+        <div className="flex items-center">
+          <MapPin className="text-blue-400 mr-2 flex-shrink-0" size={18} />
+          <h3 className="font-medium">Lat: {location.lat.toFixed(7)}, Lng: {location.lng.toFixed(7)}</h3>
         </div>
         
-        <button
-          onClick={getLocation}
-          disabled={gettingLocation}
-          className={`w-full flex items-center justify-center px-4 py-3 rounded-lg transition-all duration-300 ${
-            gettingLocation
-              ? "bg-blue-400 dark:bg-blue-700 cursor-wait"
-              : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 hover:shadow-md"
-          } text-white font-medium`}
-        >
-          {gettingLocation ? (
-            <>
-              <Loader2 className="animate-spin mr-2 h-5 w-5" />
-              <span>Locating you...</span>
-            </>
-          ) : (
-            <>
-              <Map className="mr-2 h-5 w-5" />
-              <span>Get Current Location</span>
-            </>
-          )}
-        </button>
-
-        {showHelp && gettingLocation && !locationError && (
-          <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-            <p className="text-yellow-700 dark:text-yellow-400 text-sm flex items-start">
-              <AlertCircle className="h-5 w-5 mr-1 flex-shrink-0" />
-              Make sure you've allowed location access in your browser. Check for permission prompts or browser settings.
-            </p>
-          </div>
-        )}
+        <div className="text-sm text-gray-400 mt-1">
+          <span>Lat: {location.lat.toFixed(6)} • Lng: {location.lng.toFixed(6)}</span>
+        </div>
         
-        {locationError && (
-          <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-600 dark:text-red-400 text-sm flex items-start">
-              <AlertCircle className="h-5 w-5 mr-1 flex-shrink-0" />
-              {locationError}
-            </p>
-          </div>
-        )}
-
-        {location && (
-          <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-lg border border-blue-100 dark:border-gray-700 transition-all duration-300 hover:shadow-md">
-            <div className="flex items-start">
-              <div className="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg mr-3">
-                <Navigation className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-1">Your Location</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{location.address}</p>
-                <a
-                  href={`https://www.google.com/maps?q=${location.coordinates[1]},${location.coordinates[0]}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium transition-colors"
-                >
-                  <Map className="h-4 w-4 mr-1" />
-                  View on Google Maps
-                  <svg className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="mt-4 flex justify-between items-center pt-2 border-t border-gray-700">
+          <a
+            href={`https://www.google.com/maps?q=${location.lat},${location.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+          >
+            Open in Google Maps
+            <ExternalLink size={14} className="ml-1" />
+          </a>
+          
+          <button
+            onClick={() => alert("Directions functionality would go here")}
+            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+          >
+            Get Directions
+          </button>
+        </div>
       </div>
     </div>
   );

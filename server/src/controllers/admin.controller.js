@@ -199,23 +199,48 @@ export const agentList = asyncHandler(async (req, res) => {
 
 // add a client
 export const addClient = asyncHandler(async (req, res) => {
-  const { clientName, clientPhoneNumbers, temporaryAddress, permanentAddress , shopAddress , houseAddress ,clientPhoto, shopPhoto , housePhoto , documents ,email , referalName , referalNumber , location } = req.body;
+  const {
+    clientName,
+    clientPhoneNumbers,
+    temporaryAddress,
+    permanentAddress,
+    shopAddress,
+    houseAddress,
+    email,
+    referalName,
+    referalNumber,
+  } = req.body;
+
+  // ✅ Extract lat/lng from req.body and build location object
+  const latitude = req.body.latitude;
+  const longitude = req.body.longitude;
+
+  const location =
+    latitude && longitude
+      ? {
+          lat: Number(latitude),
+          lng: Number(longitude),
+          address: `Lat: ${latitude}, Lng: ${longitude}`,
+        }
+      : null;
 
   let loans = [];
   if (req.body.loans) {
     try {
-      loans = typeof req.body.loans === "string"
-        ? JSON.parse(req.body.loans)
-        : req.body.loans;
+      loans =
+        typeof req.body.loans === "string"
+          ? JSON.parse(req.body.loans)
+          : req.body.loans;
     } catch (error) {
       throw new ApiError(400, "Invalid format for loans");
     }
   }
+
   let googleMapsLink = "";
-if (location?.coordinates?.length === 2) {
-  const [lng, lat] = location.coordinates;
-  googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
-}
+  if (latitude && longitude) {
+    googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+  }
+
   const existingClient = await Client.findOne({
     $or: [{ clientPhoneNumbers }, { clientName }],
   });
@@ -225,9 +250,8 @@ if (location?.coordinates?.length === 2) {
   }
 
   const clientpic = await uploadOnCloudinary(req.files?.clientPhoto?.[0]?.path);
-  const shoppic  = await uploadOnCloudinary(req.files?.shopPhoto?.[0]?.path);
+  const shoppic = await uploadOnCloudinary(req.files?.shopPhoto?.[0]?.path);
   const housepic = await uploadOnCloudinary(req.files?.housePhoto?.[0]?.path);
-  const document = await uploadOnCloudinary(req.files?.documents?.[0]?.path);
 
   const documentFiles = req.files?.documents || [];
   const documentUrls = [];
@@ -238,10 +262,7 @@ if (location?.coordinates?.length === 2) {
     }
   }
 
-
   const creatorId = req.admin?._id || req.agent?._id;
-  console.log("🔁 creatorId:", creatorId);
-  
   if (!creatorId) {
     throw new ApiError(401, "Missing creator information (admin or agent).");
   }
@@ -253,29 +274,30 @@ if (location?.coordinates?.length === 2) {
       tenureDays,
       tenureMonths,
       emiType,
-      startDate = new Date()
+      startDate = new Date(),
     } = loan;
-    
 
-    
     const principal = Number(loanAmount);
     const rate = Number(interestRate);
     const totalTenureDays = Number(tenureDays || 0);
     const totalTenureMonths = Number(tenureMonths || 0);
-    const tenureInYears = totalTenureMonths ? totalTenureMonths / 12 : totalTenureDays / 365;
-    
-    const interest = (loanAmount * interestRate * tenureInYears) / 100;
+    const tenureInYears = totalTenureMonths
+      ? totalTenureMonths / 12
+      : totalTenureDays / 365;
+
+    const interest = (principal * rate * tenureInYears) / 100;
     const totalPayable = principal + interest;
     const disbursedAmount = principal - interest;
     const totalAmountLeft = totalPayable;
 
     const start = new Date(startDate);
-    const dueDate = new Date(start.getTime() + totalTenureDays * 24 * 60 * 60 * 1000);
+    const dueDate = new Date(
+      start.getTime() + totalTenureDays * 24 * 60 * 60 * 1000
+    );
     if (isNaN(dueDate.getTime())) {
       throw new ApiError(400, "Invalid due date calculated from tenure");
     }
-   
-    // ✅ EMI calculation based on total repayment
+
     let emiAmount = 0;
     if (emiType === "Daily") {
       emiAmount = totalTenureDays ? totalPayable / totalTenureDays : totalPayable;
@@ -309,35 +331,36 @@ if (location?.coordinates?.length === 2) {
       status: "Ongoing",
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: creatorId
+      createdBy: creatorId,
     };
   });
 
   const newClient = await Client.create({
     clientName,
     clientPhoneNumbers,
-    temporaryAddress, 
-    permanentAddress ,
-    shopAddress ,
-     houseAddress,
+    temporaryAddress,
+    permanentAddress,
+    shopAddress,
+    houseAddress,
     clientPhoto: clientpic?.url || "",
     shopPhoto: shoppic?.url || "",
     housePhoto: housepic?.url || "",
-    documents: document?.url || "",
     documents: documentUrls,
     loans: processedLoans,
     email,
     referalName,
     referalNumber,
     googleMapsLink,
-    location
-
+    location, // ✅ Location now saved correctly
   });
 
-  return res.status(201).json(
-    new ApiResponse(201, { newClient }, "Client and loan(s) added successfully")
-  );
+  return res
+    .status(201)
+    .json(
+      new ApiResponse(201, { newClient }, "Client and loan(s) added successfully")
+    );
 });
+
 
 
 // update client details 
@@ -410,9 +433,9 @@ export const agentDetails = asyncHandler(async (req, res) => {
 })
 
 
-// show all clients with loans removed
+// show all clients 
 export const clientList = asyncHandler(async (req, res) => {
-  const clients = await Client.find().select("-loans");
+  const clients = await Client.find()
   return res.status(200).json(new ApiResponse(200, clients, "client list"));
 });
 
@@ -773,3 +796,44 @@ export const viewEmiCollectionHistory = asyncHandler(async (req, res) => {
 
 
 })
+
+
+
+// get emi collection data of particular agent
+export const getEmiCollectionData = asyncHandler(async (req, res) => {
+  const { agentId } = req.params;
+
+  const clients = await Client.find({
+    "loans.emiRecords.collectedBy": agentId,
+  });
+
+  if (!clients.length) throw new ApiError(404, "No EMI collection data found");
+
+  const emiCollectionData = [];
+  let totalCollected = 0;
+
+  clients.forEach(client => {
+    client.loans.forEach(loan => {
+      loan.emiRecords.forEach(emi => {
+        if (emi.collectedBy?.toString() === agentId) {
+          emiCollectionData.push({
+            clientName: client.clientName,
+            loanNumber: loan.uniqueLoanNumber,
+            amountCollected: emi.amountCollected,
+            date: emi.date,
+            status: emi.status,
+            location: emi.location,
+          });
+          totalCollected += emi.amountCollected;
+        }
+      });
+    });
+  });
+
+  res.status(200).json(
+    new ApiResponse(200, {
+      totalCollected,
+      emiCollectionData,
+    }, "EMI collection data retrieved successfully")
+  );
+});

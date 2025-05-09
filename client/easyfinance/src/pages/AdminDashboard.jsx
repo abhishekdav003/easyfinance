@@ -12,6 +12,7 @@ import DashboardOverview from "../components/dashboard/dashOverview";
 import ClientManagement from "../components/dashboard/client";
 import AgentManagement from "../components/dashboard/agent";
 import ResponsiveSidebar from "../components/dashboard/sidebar";
+import LoanManagementTable from "../components/dashboard/loan";
 import { 
   Loader, 
   Moon, 
@@ -253,7 +254,7 @@ const AdminDashboard = () => {
                 {activeView === "dashboard" && "Dashboard Overview"}
                 {activeView === "clients" && "Client Management"}
                 {activeView === "agents" && "Agent Management"}
-                {activeView === "loans" && "Loan Management"}
+                
               </h2>
             </div>
             
@@ -336,12 +337,7 @@ const AdminDashboard = () => {
               )}
 
               {/* Loans View */}
-              {activeView === "loans" && (
-                <div className="p-4">
-                  <h3 className="text-lg font-medium mb-4">Loan Management</h3>
-                  <p>Loan management interface will be implemented here.</p>
-                </div>
-              )}
+              {activeView === "loans" && <LoanManagementTable/>}
             </div>
           </div>
         </div>

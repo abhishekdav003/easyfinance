@@ -4,6 +4,7 @@ import { Users, UserPlus, Search, Trash2, User, AlertTriangle, Loader, Filter, X
 import { getAllAgents, deleteAgent } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import AgentRegisterForm from "../dashboard/agentregistration";
+import AgentEmiCollectionModal from "../details/AgentCollection";
 
 const AgentManagement = () => {
   const [agents, setAgents] = useState([]);
@@ -11,6 +12,8 @@ const AgentManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     fetchAgents();
@@ -45,6 +48,14 @@ const AgentManagement = () => {
       }
     }
   };
+ 
+  
+  ///////////////////////////////////////
+  const openModal = (agentId) => {
+    setSelectedAgentId(agentId);
+    setModalOpen(true);
+  };
+//////////////////////////////////////////
 
   // Filter agents based on search term
   const filteredAgents = agents.filter(
@@ -188,13 +199,17 @@ const AgentManagement = () => {
                         </td>
                         <td className="px-6 py-4 border-b border-gray-200">
                           <div className="flex space-x-2">
-                            <button
-                              onClick={() => navigate(`/edit-agent/${agent._id}`)}
-                              className="p-1 rounded-md hover:bg-gray-100 transition-colors"
-                              title="Edit Agent"
-                            >
-                              <User size={16} className="text-blue-600" />
-                            </button>
+                          <button
+  onClick={() => {
+    setSelectedAgentId(agent._id);
+    setModalOpen(true);
+  }}
+  className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+  title="View EMI Collection"
+>
+  <User size={16} className="text-blue-600" />
+</button>
+
                             <button
                               onClick={() => handleDeleteAgent(agent._id)}
                               className="p-1 rounded-md hover:bg-gray-100 transition-colors"
@@ -208,6 +223,12 @@ const AgentManagement = () => {
                     ))}
                   </tbody>
                 </table>
+                
+                <AgentEmiCollectionModal
+  agentId={selectedAgentId}
+  open={modalOpen}
+  onClose={() => setModalOpen(false)}
+/>
 
                 {/* Mobile card view */}
                 <div className="md:hidden space-y-4 px-4">

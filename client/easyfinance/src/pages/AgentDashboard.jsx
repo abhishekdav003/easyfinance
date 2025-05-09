@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Search, UserPlus, Eye } from 'lucide-react';
-import AddClientModal from '../model/AddClientModel';
-import CollectEmiModal from '../model/CollectEmiModel';
-import ViewClientModal from '../model/ViewClientModel';
-import { searchClients } from '../services/agentAPI';
+import AddClientForm from '../components/forms/ClientRegistration';
+import { getAllAgentClients } from '../services/agentAPI';
+// import ViewClientModal from '../model/ViewClientModel';
+// import CollectEmiModal from '../model/CollectEmiModel';
 
 export default function AgentDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
   const [isViewClientModalOpen, setIsViewClientModalOpen] = useState(false);
@@ -15,36 +16,46 @@ export default function AgentDashboard() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedLoan, setSelectedLoan] = useState(null);
 
-  // Function to handle search
-  const handleSearch = async (e) => {
-  e.preventDefault();
-  if (!searchTerm.trim()) return;
+  useEffect(() => {
+    const fetchClients = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getAllAgentClients();
+        if (data.success) {
+          setClients(data.data || []);
+          setFilteredClients([]); // ⛔ Don't show anything initially
+        } else {
+          console.error("Failed to load clients:", data.message);
+        }
+      } catch (error) {
+        console.error("Error loading clients:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchClients();
+  }, []);
 
-  setIsLoading(true);
-  try {
-    const data = await searchClients(searchTerm);
-    if (data.success) {
-      setSearchResults(data.data || []);
-    } else {
-      console.error("Search failed:", data.message);
-      setSearchResults([]);
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (value.trim() === '') {
+      setFilteredClients([]); // Hide results if empty
+      return;
     }
-  } catch (error) {
-    console.error("Search error:", error);
-    setSearchResults([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
 
+    const filtered = clients.filter(client =>
+      client.clientName.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredClients(filtered);
+  };
 
-  // Function to view client details
   const handleViewClient = (client) => {
     setSelectedClient(client);
     setIsViewClientModalOpen(true);
   };
 
-  // Function to collect EMI
   const handleCollectEmi = (client, loan) => {
     setSelectedClient(client);
     setSelectedLoan(loan);
@@ -64,7 +75,7 @@ export default function AgentDashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="bg-white rounded-lg shadow p-6">
-          {/* Search and Add Client Section */}
+          {/* Search and Add Client */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="w-full sm:w-2/3">
               <div className="relative">
@@ -73,25 +84,19 @@ export default function AgentDashboard() {
                   placeholder="Search client by name..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSearch(e);
-                    }
-                  }}
+                  onChange={handleSearchChange}
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
-                <button
-                  onClick={handleSearch}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-blue-500 hover:text-blue-700"
-                >
-                  Search
-                </button>
               </div>
+              {filteredClients.length === 0 && searchTerm.trim() === '' && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Start typing a client name to search.
+                </p>
+              )}
             </div>
-            
+
             <button
               onClick={() => setIsAddClientModalOpen(true)}
               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200"
@@ -101,44 +106,42 @@ export default function AgentDashboard() {
             </button>
           </div>
 
-          {/* Search Results */}
+          {/* Client Table */}
           <div className="mt-8">
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
               </div>
-            ) : searchResults.length > 0 ? (
+            ) : filteredClients.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Client Name
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Phone Number
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client Name</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone Number</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No. of Loans</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {searchResults.map((client) => (
+                    {filteredClients.map((client) => (
                       <tr key={client._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {client.clientName}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{client.clientName}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.clientPhoneNumbers?.[0]}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {client.houseAddress || client.permanentAddress || client.shopAddress || "N/A"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {client.clientPhone}
+                          {client.loans?.length || 0}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <button
                             onClick={() => handleViewClient(client)}
                             className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
                           >
                             <Eye className="h-4 w-4" />
-                            View
+                            View Loans
                           </button>
                         </td>
                       </tr>
@@ -146,14 +149,12 @@ export default function AgentDashboard() {
                   </tbody>
                 </table>
               </div>
-            ) : searchTerm.trim() ? (
-              <div className="text-center py-8 text-gray-500">
-                No clients found with the name "{searchTerm}"
-              </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                Search for clients by name to view their details
-              </div>
+              searchTerm.trim() && (
+                <div className="text-center py-8 text-gray-500">
+                  No clients found with the name "{searchTerm}"
+                </div>
+              )
             )}
           </div>
         </div>
@@ -161,12 +162,14 @@ export default function AgentDashboard() {
 
       {/* Modals */}
       {isAddClientModalOpen && (
-        <AddClientModal 
-          isOpen={isAddClientModalOpen} 
-          onClose={() => setIsAddClientModalOpen(false)} 
+        <AddClientForm
+          isOpen={isAddClientModalOpen}
+          onClose={() => setIsAddClientModalOpen(false)}
         />
       )}
 
+      {/* Optional View/EMI modals */}
+      {/*
       {isViewClientModalOpen && selectedClient && (
         <ViewClientModal
           isOpen={isViewClientModalOpen}
@@ -184,6 +187,7 @@ export default function AgentDashboard() {
           loan={selectedLoan}
         />
       )}
+      */}
     </div>
   );
 }

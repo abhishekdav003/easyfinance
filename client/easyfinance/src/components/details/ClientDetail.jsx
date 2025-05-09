@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { getClientDetailsById } from "../../services/api.js";
 import { motion } from "framer-motion";
-import { Loader, X } from "lucide-react";
-import { Phone } from "lucide-react";
-import { Users } from "lucide-react";
+import { Loader, X, Phone, Users, MapPin, Mail, Calendar, BadgeCheck, Building, Home, CreditCard, Image, FileText, User, ChevronLeft } from "lucide-react";
 import LocationDisplay from "./LocationDisplay.jsx";
-
-
 
 const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
   const [client, setClient] = useState(null);
@@ -20,8 +16,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
       try {
         setLoading(true);
         const clientData = await getClientDetailsById(clientId);
-        // ✅ Check loan status and adjust client status for UI
-
+        
         if (!clientData.data.status) {
           clientData.data.status = "Ongoing";
         }
@@ -32,7 +27,6 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
           clientData.data.status = "Completed"; // for UI
         }
         setClient(clientData.data);
-        console.log("clientData", clientData.data);
       } catch (err) {
         setError("Failed to fetch client details: " + err.message);
         console.error("Error fetching client details:", err);
@@ -71,9 +65,15 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
   // Default avatar if no photo is available
   const defaultAvatar = "https://avatar.iran.liara.run/public/2";
 
+  // Card style based on dark mode
+  const cardStyle = `${darkMode 
+    ? 'bg-gray-800/80 border-gray-700 hover:shadow-blue-900/10' 
+    : 'bg-white border-gray-100'} 
+    rounded-xl shadow-sm border transition-all duration-300 hover:shadow-lg`;
+
   if (loading) {
     return (
-      <div className={`flex justify-center items-center h-full ${darkMode ? 'text-blue-400' : 'text-blue-500'}`}>
+      <div className={`flex justify-center items-center h-full min-h-[60vh] ${darkMode ? 'text-blue-400' : 'text-blue-500'}`}>
         <div className="flex flex-col items-center">
           <Loader className="h-12 w-12 animate-spin" />
           <p className={`mt-3 font-medium animate-pulse ${darkMode ? 'text-blue-400' : 'text-blue-500'}`}>
@@ -112,9 +112,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
                 : 'bg-red-500 hover:bg-red-600 text-white'} 
                 font-medium py-2 px-4 rounded-md transition-colors duration-300 shadow-md flex items-center`}
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-              </svg>
+              <ChevronLeft className="w-5 h-5 mr-2" />
               Go Back
             </button>
           </div>
@@ -144,15 +142,41 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
             : 'bg-blue-500 hover:bg-blue-600 text-white'} 
             font-medium py-2 px-5 rounded-md shadow-md transition-all duration-300 transform hover:scale-105 flex items-center mx-auto`}
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-          </svg>
+          <ChevronLeft className="w-5 h-5 mr-2" />
           Go Back
         </button>
       </motion.div>
     );
   }
-  console.log("Client status value:", client?.status);
+
+  // Status configuration for consistent styling
+  const getStatusConfig = (status) => {
+    switch(status) {
+      case "Completed":
+        return {
+          bg: darkMode ? "bg-green-900/30" : "bg-green-100",
+          border: darkMode ? "border-green-700" : "border-green-300",
+          text: darkMode ? "text-green-300" : "text-green-800",
+          dotColor: "bg-green-500"
+        };
+      case "Ongoing":
+        return {
+          bg: darkMode ? "bg-yellow-900/30" : "bg-yellow-100",
+          border: darkMode ? "border-yellow-700" : "border-yellow-300",
+          text: darkMode ? "text-yellow-300" : "text-yellow-800",
+          dotColor: "bg-yellow-500"
+        };
+      default:
+        return {
+          bg: darkMode ? "bg-gray-700" : "bg-gray-100",
+          border: darkMode ? "border-gray-600" : "border-gray-300",
+          text: darkMode ? "text-gray-300" : "text-gray-800",
+          dotColor: "bg-gray-500"
+        };
+    }
+  };
+
+  const statusConfig = getStatusConfig(client.status);
 
   return (
     <motion.div 
@@ -162,11 +186,12 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
       className={`${darkMode 
         ? 'bg-gray-800 border-gray-700 text-gray-200' 
         : 'bg-white border-gray-100 text-gray-800'} 
-        shadow-lg rounded-xl p-4 md:p-8 max-w-4xl mx-auto mt-6 md:mt-10 border transition-colors duration-300`}
+        shadow-lg rounded-xl p-4 md:p-6 max-w-5xl mx-auto my-6 border transition-colors duration-300`}
     >
+      {/* Image Viewer Modal */}
       {selectedImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4">
-          <div className={`relative max-w-4xl w-full max-h-screen overflow-auto p-2 ${darkMode ? 'bg-gray-900' : 'bg-white'} rounded-lg`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 p-4 overflow-hidden">
+          <div className={`relative max-w-4xl w-full max-h-[90vh] overflow-auto p-2 ${darkMode ? 'bg-gray-900' : 'bg-white'} rounded-xl shadow-2xl`}>
             <button 
               onClick={closeImageViewer}
               className={`absolute right-3 top-3 rounded-full ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'} p-2 shadow-lg z-10 hover:bg-red-500 hover:text-white transition-colors duration-300`}
@@ -174,8 +199,8 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
               <X size={24} />
             </button>
             
-            <div className="pt-8 pb-4 px-4">
-              <h3 className={`text-center text-xl font-bold mb-4 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+            <div className="pt-10 pb-6 px-6">
+              <h3 className={`text-center text-xl font-bold mb-6 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                 {selectedImage.type}
               </h3>
               <div className="flex justify-center">
@@ -193,6 +218,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
         </div>
       )}
 
+      {/* Page Header */}
       <div className="mb-6 md:mb-8">
         <motion.div
           initial={{ opacity: 0 }}
@@ -207,9 +233,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
               : 'text-gray-700 hover:text-blue-600'} 
               font-medium transition-colors duration-300`}
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
+            <ChevronLeft className="w-5 h-5 mr-2" />
             Back
           </button>
         </motion.div>
@@ -221,9 +245,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="text-2xl md:text-3xl font-bold flex items-center"
           >
-            <svg className={`w-7 h-7 md:w-8 md:h-8 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
+            <User className={`w-7 h-7 md:w-8 md:h-8 mr-3 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
             Client Details
           </motion.h1>
           
@@ -237,11 +259,9 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
               className={`${darkMode 
                 ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                 : 'bg-blue-500 hover:bg-blue-600 text-white'} 
-                font-medium py-2 px-4 md:px-5 rounded-lg transition-all duration-300 shadow-md flex items-center text-sm md:text-base`}
+                font-medium py-2.5 px-5 rounded-lg transition-all duration-300 shadow-md flex items-center text-sm md:text-base hover:shadow-lg`}
             >
-              <svg className="w-4 h-4 md:w-5 md:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
+              <CreditCard className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               View Loans
             </button>
           </motion.div>
@@ -253,13 +273,13 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.5 }}
-        className={`flex flex-col md:flex-row items-center mb-6 md:mb-8 ${darkMode 
+        className={`flex flex-col md:flex-row items-center mb-8 ${darkMode 
           ? 'bg-gradient-to-br from-blue-900/30 to-gray-800/50' 
           : 'bg-gradient-to-br from-blue-50 to-white'} 
-          p-4 md:p-6 rounded-xl shadow-sm transition-colors duration-300`}
+          p-6 md:p-8 rounded-xl shadow-md transition-colors duration-300`}
       >
-        <div className="mb-4 md:mb-0 md:mr-8">
-          <div className="relative w-28 h-28 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-xl group">
+        <div className="mb-6 md:mb-0 md:mr-8">
+          <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-xl group">
             <img
               src={client.clientPhoto || defaultAvatar}
               alt={`${client.clientName || "Client"} Photo`}
@@ -273,11 +293,9 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
-                className="absolute bottom-0 right-0 w-6 h-6 md:w-8 md:h-8 bg-green-500 rounded-full border-2 border-white dark:border-gray-700 flex items-center justify-center"
+                className="absolute bottom-0 right-0 w-7 h-7 md:w-8 md:h-8 bg-green-500 rounded-full border-2 border-white dark:border-gray-700 flex items-center justify-center"
               >
-                <svg className="w-3 h-3 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
+                <BadgeCheck className="w-4 h-4 md:w-5 md:h-5 text-white" />
               </motion.div>
             )}
           </div>
@@ -287,7 +305,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-2xl md:text-3xl font-bold mb-1"
+            className="text-2xl md:text-3xl font-bold mb-2"
           >
             {client.clientName || "Client Name"}
           </motion.h2>
@@ -297,86 +315,68 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
             transition={{ delay: 0.6, duration: 0.5 }}
             className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-3 flex items-center justify-center md:justify-start`}
           >
-            <svg className={`w-4 h-4 md:w-5 md:h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-            </svg>
+            <Mail className={`w-4 h-4 md:w-5 md:h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
             {client.email || "No email provided"}
           </motion.p>
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
-            className="mt-2"
+            className="mt-3"
           >
-            {client && (
-              <span className={`inline-flex items-center px-3 py-1 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-300 ${
-                client.status === "Completed"
-                  ? darkMode ? "bg-green-900/30 text-green-300 border border-green-700" : "bg-green-100 text-green-800 border border-green-300"
-                  : client.status === "Ongoing"
-                  ? darkMode ? "bg-yellow-900/30 text-yellow-300 border border-yellow-700" : "bg-yellow-100 text-yellow-800 border border-yellow-300"
-                  : darkMode ? "bg-gray-700 text-gray-300 border border-gray-600" : "bg-gray-100 text-gray-800 border border-gray-300"
-              }`}>
-                <span className={`w-2 h-2 rounded-full mr-2 ${
-                  client.status === "Completed" ? "bg-green-500" : 
-                  client.status === "Ongoing" ? "bg-yellow-500" : "bg-gray-500"
-                }`}></span>
-                {client.status || "Unknown"}
-              </span>
-            )}
+            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+              statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
+              <span className={`w-2 h-2 rounded-full mr-2 ${statusConfig.dotColor}`}></span>
+              {client.status || "Unknown"}
+            </span>
           </motion.div>
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Personal Information */}
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className={`${darkMode 
-            ? 'bg-gray-800/80 border-gray-700 hover:shadow-lg hover:shadow-blue-900/10' 
-            : 'bg-white border-gray-100 hover:shadow-md'} 
-            p-4 md:p-6 rounded-xl shadow-sm border transition-shadow duration-300`}
+          className={`${cardStyle} p-5 md:p-6`}
         >
           <h2 className="text-lg font-semibold mb-4 flex items-center">
-            <svg className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
+            <User className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
             Personal Information
           </h2>
           <div className="space-y-4">
-            <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+            <div className={`flex items-center ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
               <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Name:</span>
               <span className="font-medium">
                 {client.clientName || "N/A"}
               </span>
             </div>
             <div className={`flex flex-col ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
-  <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Phone Numbers:</span>
-  <div className="space-y-2">
-    {/* Display all phone numbers from the array */}
-    {client.clientPhoneNumbers && client.clientPhoneNumbers.length > 0 ? (
-      client.clientPhoneNumbers.map((phone, index) => (
-        <div className="flex items-center" key={index}>
-          <Phone size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
-          <span className="font-medium">{phone}</span>
-        </div>
-      ))
-    ) : (
-      <div className="flex items-center">
-        <Phone size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
-        <span className="font-medium">N/A</span>
-      </div>
-    )}
-  </div>
-</div>
-            <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>Phone Numbers:</span>
+              <div className="space-y-2">
+                {client.clientPhoneNumbers && client.clientPhoneNumbers.length > 0 ? (
+                  client.clientPhoneNumbers.map((phone, index) => (
+                    <div className="flex items-center" key={index}>
+                      <Phone size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+                      <span className="font-medium">{phone}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex items-center">
+                    <Phone size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+                    <span className="font-medium">N/A</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className={`flex items-center ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
               <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Email:</span>
               <span className="font-medium">{client.email || "N/A"}</span>
             </div>
-            <div className="flex">
+            <div className="flex items-center">
               <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Client ID:</span>
-              <span className={`font-medium text-sm ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} px-2 py-1 rounded`}>
+              <span className={`font-medium text-sm ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} px-3 py-1 rounded-md`}>
                 {client._id}
               </span>
             </div>
@@ -388,35 +388,26 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className={`${darkMode 
-            ? 'bg-gray-800/80 border-gray-700 hover:shadow-lg hover:shadow-blue-900/10' 
-            : 'bg-white border-gray-100 hover:shadow-md'} 
-            p-4 md:p-6 rounded-xl shadow-sm border transition-shadow duration-300`}
+          className={`${cardStyle} p-5 md:p-6`}
         >
           <h2 className="text-lg font-semibold mb-4 flex items-center">
-            <svg className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+            <FileText className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
             System Information
           </h2>
           <div className="space-y-4">
-            <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+            <div className={`flex items-center ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
               <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Created:</span>
-              <span className="font-medium">
-                {new Date(client.createdAt).toLocaleDateString()}
-              </span>
+              <div className="flex items-center">
+                <Calendar className={`w-4 h-4 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+                <span className="font-medium">
+                  {new Date(client.createdAt).toLocaleDateString()}
+                </span>
+              </div>
             </div>
-            <div className="flex">
+            <div className="flex items-center">
               <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Status:</span>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  client.status === "Completed"
-                  ? darkMode ? "bg-green-900/30 text-green-300 border border-green-700" : "bg-green-100 text-green-800 border border-green-200"
-                  : client.status === "Ongoing"
-                  ? darkMode ? "bg-yellow-900/30 text-yellow-300 border border-yellow-700" : "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                  : darkMode ? "bg-gray-700 text-gray-300 border border-gray-600" : "bg-gray-100 text-gray-800 border border-gray-200"
-                }`}
-              >
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
+                <span className={`w-2 h-2 rounded-full mr-2 inline-block ${statusConfig.dotColor}`}></span>
                 {client.status || "Unknown"}
               </span>
             </div>
@@ -429,115 +420,116 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.7, duration: 0.5 }}
-        className={`mt-6 ${darkMode 
-          ? 'bg-gray-800/80 border-gray-700 hover:shadow-lg hover:shadow-blue-900/10' 
-          : 'bg-white border-gray-100 hover:shadow-md'} 
-          p-4 md:p-6 rounded-xl shadow-sm border transition-shadow duration-300`}
+        className={`mt-6 ${cardStyle} p-5 md:p-6`}
       >
         <h2 className="text-lg font-semibold mb-4 flex items-center">
-          <svg className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-          </svg>
+          <MapPin className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
           Address Information
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className={`flex flex-col ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
-              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Temporary Address:</span>
-              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-2 rounded`}>
+              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>Temporary Address:</span>
+              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-3 rounded-md`}>
                 {client.temporaryAddress || "N/A"}
               </span>
             </div>
-            <div className={`flex flex-col ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
-              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Permanent Address:</span>
-              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-2 rounded`}>
+            <div className={`flex flex-col ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3 md:border-b-0 md:pb-0`}>
+              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>Permanent Address:</span>
+              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-3 rounded-md`}>
                 {client.permanentAddress || "N/A"}
               </span>
             </div>
           </div>
           <div className="space-y-4">
             <div className={`flex flex-col ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
-              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>Shop Address:</span>
-              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-2 rounded`}>
+              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>
+                <Building size={16} className="inline mr-2" />
+                Shop Address:
+              </span>
+              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-3 rounded-md`}>
                 {client.shopAddress || "N/A"}
               </span>
             </div>
-            <div className={`flex flex-col ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
-              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>House Address:</span>
-              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-2 rounded`}>
+            <div className={`flex flex-col`}>
+              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>
+                <Home size={16} className="inline mr-2" />
+                House Address:
+              </span>
+              <span className={`font-medium ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-50 text-gray-800'} p-3 rounded-md`}>
                 {client.houseAddress || "N/A"}
               </span>
             </div>
           </div>
         </div>
       </motion.div>
-      <LocationDisplay
-  onLocationFetched={(loc) =>
-    setFormData((prev) => ({
-      ...prev,
-      location: loc,
-    }))
-  }
-/>
 
-      {/* Referral Information - NEW SECTION */}
+      {/* Location Display */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.65, duration: 0.5 }}
-        className={`mt-6 ${darkMode 
-          ? 'bg-gray-800/80 border-gray-700 hover:shadow-lg hover:shadow-blue-900/10' 
-          : 'bg-white border-gray-100 hover:shadow-md'} 
-          p-4 md:p-6 rounded-xl shadow-sm border transition-shadow duration-300`}
+        transition={{ delay: 0.75, duration: 0.5 }}
+        className="mt-6"
+      >
+        <LocationDisplay location={client.location} darkMode={darkMode} />
+      </motion.div>
+
+      {/* Referral Information */}
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+        className={`mt-6 ${cardStyle} p-5 md:p-6`}
       >
         <h2 className="text-lg font-semibold mb-4 flex items-center">
           <Users className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
           Referral Information
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className={`flex items-center ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3 md:border-b-0 md:pb-0`}>
             <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Referral Name:</span>
             <span className="font-medium">
               {client.referalName || "N/A"}
             </span>
           </div>
-          <div className={`flex ${darkMode ? 'border-gray-700' : 'border-gray-100'} border-b pb-3`}>
+          <div className="flex items-center">
             <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Referral Phone:</span>
-            <span className="font-medium">
-              {client.referalNumber || "N/A"}
+            <span className="font-medium flex items-center">
+              {client.referalNumber ? (
+                <>
+                  <Phone size={16} className={`mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+                  {client.referalNumber}
+                </>
+              ) : "N/A"}
             </span>
           </div>
         </div>
       </motion.div>
+
       {/* Photo Gallery */}
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.5 }}
-        className={`mt-6 ${darkMode 
-          ? 'bg-gray-800/80 border-gray-700 hover:shadow-lg hover:shadow-blue-900/10' 
-          : 'bg-white border-gray-100 hover:shadow-md'} 
-          p-4 md:p-6 rounded-xl shadow-sm border transition-shadow duration-300`}
+        transition={{ delay: 0.9, duration: 0.5 }}
+        className={`mt-6 ${cardStyle} p-5 md:p-6`}
       >
-        <h2 className="text-lg font-semibold mb-4 flex items-center">
-          <svg className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
+        <h2 className="text-lg font-semibold mb-5 flex items-center">
+          <Image className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
           Photo Gallery
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {/* ID Proof Photo */}
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.9, duration: 0.5 }}
+            transition={{ delay: 1.0, duration: 0.5 }}
             className={`${darkMode 
               ? 'bg-gray-700/50 hover:bg-gray-700 border-gray-600' 
               : 'bg-gray-50 hover:bg-gray-100 border-gray-200'}
-              p-3 rounded-lg border shadow-sm group cursor-pointer transition-all duration-300`}
+              p-4 rounded-lg border shadow-sm group cursor-pointer transition-all duration-300 hover:shadow-md`}
             onClick={() => openImageViewer(client.clientPhoto || defaultAvatar, "ID Proof")}
           >
-            <div className="aspect-video rounded-md overflow-hidden bg-gray-100 dark:bg-gray-800 mb-2">
+            <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 mb-3 shadow-sm">
               <img 
                 src={client.clientPhoto || defaultAvatar} 
                 alt="ID Proof" 

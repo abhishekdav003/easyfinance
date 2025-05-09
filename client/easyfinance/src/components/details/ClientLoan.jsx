@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { loanDetails } from "../../services/api.js";
-import LoanDetailsShow from "../details/LoanDetail.jsx";
-import { getLoanDetailsById } from "../../services/api.js";
+// import LoanDetailsShow from "../details/LoanDetail.jsx";
+// import { getLoanDetailsById } from "../../services/api.js";
 import { motion } from "framer-motion";
 
 const ClientLoans = ({ clientId, onBack, onViewLoanDetails, darkMode = false }) => {

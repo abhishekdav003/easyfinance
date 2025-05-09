@@ -148,3 +148,12 @@ export const getEmiCollectionHistory = async (clientId, loanId) => {
     throw error;
   }
 };
+export const getAgentEmiCollection = async (agentId) => {
+  try {
+    const response = await API.post(`/admin/getEmiCollectionData/${agentId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching agent EMI collection history:", error);
+    throw error;
+  }
+};

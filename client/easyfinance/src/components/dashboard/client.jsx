@@ -1,6 +1,6 @@
 // components/clients/ClientManagement.jsx
 import React, { useState, useEffect } from "react";
-import { UserPlus, Menu, X, Eye, PlusCircle, Trash2, UserCircle } from "lucide-react";
+import { UserPlus, Menu, X, Eye, PlusCircle, Trash2, UserCircle, Search } from "lucide-react";
 import { getAllClients, deleteClient } from "../../services/api";
 import AddClientForm from "../forms/ClientRegistration";
 import ClientDetails from "../details/ClientDetail";
@@ -28,14 +28,43 @@ const ClientManagement = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredClients, setFilteredClients] = useState(clients);
 
   useEffect(() => {
     // Reset mobile menu when client list changes
     setMobileMenuOpen(null);
+    // Update filtered clients when clients change
+    setFilteredClients(clients);
   }, [clients]);
+
+  useEffect(() => {
+    // Filter clients based on search term
+    if (searchTerm.trim() === "") {
+      setFilteredClients(clients);
+    } else {
+      const term = searchTerm.toLowerCase();
+      const filtered = clients.filter(client => 
+        (client.clientName && client.clientName.toLowerCase().includes(term)) || 
+        (client.clientPhoneNumbers && client.clientPhoneNumbers.some(phone => phone && phone.includes(term))) ||
+        (client.permanentAddress && client.permanentAddress.toLowerCase().includes(term))
+      );
+      setFilteredClients(filtered);
+    }
+  }, [searchTerm, clients]);
 
   const toggleMobileActions = (clientId) => {
     setMobileMenuOpen(mobileMenuOpen === clientId ? null : clientId);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchTerm("");
   };
 
   // Render client action buttons based on screen size
@@ -189,6 +218,39 @@ const ClientManagement = ({
             </button>
           </div>
 
+          {/* Search Bar */}
+          <div className={`mb-4 ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'} rounded-lg p-3 shadow-sm`}>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className={`h-5 w-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+              </div>
+              <input
+                type="text"
+                placeholder="Search by name, phone or address..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className={`pl-10 pr-10 py-2 w-full rounded-md ${
+                  darkMode 
+                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400 focus:border-blue-500' 
+                    : 'border border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500'
+                } transition-colors`}
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className={`absolute inset-y-0 right-0 pr-3 flex items-center ${
+                    darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+            <div className={`mt-2 text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              {filteredClients.length} {filteredClients.length === 1 ? 'client' : 'clients'} found
+            </div>
+          </div>
+
           {/* Add Client Form */}
           {showForm && <AddClientForm onClientAdded={handleClientAdded} darkMode={darkMode} />}
 
@@ -227,7 +289,7 @@ const ClientManagement = ({
                 <tbody className={`${
                   darkMode ? 'bg-gray-800 divide-y divide-gray-700' : 'bg-white divide-y divide-gray-200'
                 }`}>
-                  {clients.map((client, index) => (
+                  {filteredClients.map((client, index) => (
                     <tr
                       key={client._id || index}
                       className={darkMode ? 'hover:bg-gray-700/50' : 'hover:bg-gray-50'}
@@ -279,7 +341,7 @@ const ClientManagement = ({
                       </td>
                     </tr>
                   ))}
-                  {clients.length === 0 && (
+                  {filteredClients.length === 0 && (
                     <tr>
                       <td
                         colSpan="4"
@@ -287,7 +349,7 @@ const ClientManagement = ({
                           darkMode ? 'text-gray-400' : 'text-gray-500'
                         }`}
                       >
-                        No clients found
+                        No clients found matching your search
                       </td>
                     </tr>
                   )}
@@ -298,7 +360,7 @@ const ClientManagement = ({
 
           {/* Client Card View for small screens */}
           <div className="sm:hidden mt-2 space-y-4">
-            {clients.map((client, index) => (
+            {filteredClients.map((client, index) => (
               <div 
                 key={client._id || index} 
                 className={`${
@@ -334,7 +396,7 @@ const ClientManagement = ({
                     <div className={`text-xs ${
                       darkMode ? 'text-gray-400' : 'text-gray-500'
                     }`}>
-                      {client.clientPhone}
+                      {client.clientPhoneNumbers?.[0]}
                     </div>
                   </div>
                   <div>
@@ -345,7 +407,7 @@ const ClientManagement = ({
                 <div className={`text-xs ${
                   darkMode ? 'text-gray-400' : 'text-gray-500'
                 } mt-1`}>
-                  <span className="font-medium">Address:</span> {client.clientAddress}
+                  <span className="font-medium">Address:</span> {client.permanentAddress}
                 </div>
 
                 {addingLoanClientId === client._id && (
@@ -365,13 +427,13 @@ const ClientManagement = ({
               </div>
             ))}
             
-            {clients.length === 0 && (
+            {filteredClients.length === 0 && (
               <div className={`${
                 darkMode 
                   ? 'bg-gray-800 text-gray-400 border border-gray-700' 
                   : 'bg-white text-gray-500'
               } rounded-lg shadow-sm p-4 text-center text-sm`}>
-                No clients found
+                No clients found matching your search
               </div>
             )}
           </div>
