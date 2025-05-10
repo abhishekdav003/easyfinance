@@ -19,7 +19,8 @@ import {
   collectEMI,
   viewEmiCollectionHistory,
   getEmiCollectionData,
-  updateLoanStatus
+  updateLoanStatus,
+  TodayCollection
   
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
@@ -93,4 +94,6 @@ router.route("/viewEmiCollectionHistory/:clientId/:loanId").get(verifyAdminJwt ,
 
 router.route("/getEmiCollection/:agentId").get(verifyAdminJwt , getEmiCollectionData);
 router.route("/updateLoanStatus/:clientId/:loanId/status").post(verifyAdminJwt , updateLoanStatus);
+
+router.route('/today-collections').get(verifyAdminJwt, TodayCollection);
 export default router;
