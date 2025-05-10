@@ -1,6 +1,16 @@
 // components/agents/AgentManagement.jsx
 import React, { useState, useEffect } from "react";
-import { Users, UserPlus, Search, Trash2, User, AlertTriangle, Loader, Filter, X } from "lucide-react";
+import {
+  Users,
+  UserPlus,
+  Search,
+  Trash2,
+  User,
+  AlertTriangle,
+  Loader,
+  Filter,
+  X,
+} from "lucide-react";
 import { getAllAgents, deleteAgent } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import AgentRegisterForm from "../dashboard/agentregistration";
@@ -48,14 +58,13 @@ const AgentManagement = () => {
       }
     }
   };
- 
-  
+
   ///////////////////////////////////////
   const openModal = (agentId) => {
     setSelectedAgentId(agentId);
     setModalOpen(true);
   };
-//////////////////////////////////////////
+  //////////////////////////////////////////
 
   // Filter agents based on search term
   const filteredAgents = agents.filter(
@@ -92,7 +101,7 @@ const AgentManagement = () => {
 
           {/* Mobile search toggle button */}
           <div className="md:hidden w-full flex justify-end">
-            <button 
+            <button
               onClick={toggleSearch}
               className="p-2 bg-blue-50 rounded-md"
             >
@@ -140,10 +149,7 @@ const AgentManagement = () => {
 
         {loading ? (
           <div className="flex justify-center items-center py-10">
-            <Loader
-              size={24}
-              className="animate-spin text-blue-600 mr-2"
-            />
+            <Loader size={24} className="animate-spin text-blue-600 mr-2" />
             <span className="text-gray-600">Loading agents...</span>
           </div>
         ) : (
@@ -199,16 +205,16 @@ const AgentManagement = () => {
                         </td>
                         <td className="px-6 py-4 border-b border-gray-200">
                           <div className="flex space-x-2">
-                          <button
-  onClick={() => {
-    setSelectedAgentId(agent._id);
-    setModalOpen(true);
-  }}
-  className="p-1 rounded-md hover:bg-gray-100 transition-colors"
-  title="View EMI Collection"
->
-  <User size={16} className="text-blue-600" />
-</button>
+                            <button
+                              onClick={() => {
+                                setSelectedAgentId(agent._id);
+                                setModalOpen(true);
+                              }}
+                              className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+                              title="View EMI Collection"
+                            >
+                              <User size={16} className="text-blue-600" />
+                            </button>
 
                             <button
                               onClick={() => handleDeleteAgent(agent._id)}
@@ -223,22 +229,24 @@ const AgentManagement = () => {
                     ))}
                   </tbody>
                 </table>
-                
+
                 <AgentEmiCollectionModal
-  agentId={selectedAgentId}
-  open={modalOpen}
-  onClose={() => setModalOpen(false)}
-/>
+                  agentId={selectedAgentId}
+                  open={modalOpen}
+                  onClose={() => setModalOpen(false)}
+                />
 
                 {/* Mobile card view */}
                 <div className="md:hidden space-y-4 px-4">
                   {filteredAgents.map((agent) => (
-                    <div 
-                      key={agent._id} 
+                    <div
+                      key={agent._id}
                       className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-medium text-blue-600">{agent.agentusername}</div>
+                        <div className="font-medium text-blue-600">
+                          {agent.agentusername}
+                        </div>
                         <div className="flex space-x-1">
                           <button
                             onClick={() => navigate(`/edit-agent/${agent._id}`)}
@@ -267,7 +275,9 @@ const AgentManagement = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Father's Name:</span>
-                          <span className="font-medium">{agent.fathername}</span>
+                          <span className="font-medium">
+                            {agent.fathername}
+                          </span>
                         </div>
                       </div>
                     </div>

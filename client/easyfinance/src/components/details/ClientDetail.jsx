@@ -4,6 +4,56 @@ import { motion } from "framer-motion";
 import { Loader, X, Phone, Users, MapPin, Mail, Calendar, BadgeCheck, Building, Home, CreditCard, Image, FileText, User, ChevronLeft } from "lucide-react";
 import LocationDisplay from "./LocationDisplay.jsx";
 
+// New component to display loan information
+const ClientLoanInfo = ({ client, darkMode }) => {
+  if (!client || !client.loans) return null;
+  
+  const activeLoans = client.loans.filter(loan => loan.status === 'Ongoing');
+  const completedLoans = client.loans.filter(loan => loan.status === 'Completed');
+  
+  const cardStyle = `${darkMode 
+    ? 'bg-gray-700/80 border-gray-700 text-gray-200' 
+    : 'bg-gray-50 border-gray-200 text-gray-800'} 
+    rounded-lg border p-4 transition-all duration-300`;
+    
+  const statusBadgeStyle = activeLoans.length > 0 
+    ? `${darkMode ? 'bg-green-600' : 'bg-green-500'} text-white` 
+    : `${darkMode ? 'bg-blue-600' : 'bg-blue-500'} text-white`;
+    
+  return (
+    <div className={cardStyle}>
+      <h3 className="text-lg font-semibold mb-3 flex items-center">
+        <CreditCard className={`w-5 h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
+        Loan Summary
+      </h3>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-3 rounded-md shadow-sm`}>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Client Name</div>
+          <div className="font-medium">{client.clientName}</div>
+        </div>
+        
+        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-3 rounded-md shadow-sm`}>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Active Loans</div>
+          <div className="font-medium">{activeLoans.length}</div>
+        </div>
+        
+        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-3 rounded-md shadow-sm`}>
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Completed Loans</div>
+          <div className="font-medium">{completedLoans.length}</div>
+        </div>
+      </div>
+      
+      <div className="mt-3 flex items-center">
+        <span className="mr-2 text-sm text-gray-500 dark:text-gray-400">Loan Status:</span>
+        <span className={`px-3 py-1 text-xs font-medium rounded-full ${statusBadgeStyle}`}>
+          {activeLoans.length > 0 ? "Active" : "No Active Loans"}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -17,9 +67,9 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
         setLoading(true);
         const clientData = await getClientDetailsById(clientId);
         
-        if (!clientData.data.status) {
-          clientData.data.status = "Ongoing";
-        }
+        // if (!clientData.data.status) {
+        //   clientData.data.status = "Ongoing";
+        // }
         const allLoansCompleted = clientData.data.loans?.every(
           (loan) => loan.totalAmountLeft <= 0
         );
@@ -150,33 +200,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
   }
 
   // Status configuration for consistent styling
-  const getStatusConfig = (status) => {
-    switch(status) {
-      case "Completed":
-        return {
-          bg: darkMode ? "bg-green-900/30" : "bg-green-100",
-          border: darkMode ? "border-green-700" : "border-green-300",
-          text: darkMode ? "text-green-300" : "text-green-800",
-          dotColor: "bg-green-500"
-        };
-      case "Ongoing":
-        return {
-          bg: darkMode ? "bg-yellow-900/30" : "bg-yellow-100",
-          border: darkMode ? "border-yellow-700" : "border-yellow-300",
-          text: darkMode ? "text-yellow-300" : "text-yellow-800",
-          dotColor: "bg-yellow-500"
-        };
-      default:
-        return {
-          bg: darkMode ? "bg-gray-700" : "bg-gray-100",
-          border: darkMode ? "border-gray-600" : "border-gray-300",
-          text: darkMode ? "text-gray-300" : "text-gray-800",
-          dotColor: "bg-gray-500"
-        };
-    }
-  };
 
-  const statusConfig = getStatusConfig(client.status);
 
   return (
     <motion.div 
@@ -318,19 +342,17 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
             <Mail className={`w-4 h-4 md:w-5 md:h-5 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
             {client.email || "No email provided"}
           </motion.p>
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-            className="mt-3"
-          >
-            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-              statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
-              <span className={`w-2 h-2 rounded-full mr-2 ${statusConfig.dotColor}`}></span>
-              {client.status || "Unknown"}
-            </span>
-          </motion.div>
         </div>
+      </motion.div>
+
+      {/* Loan Information Summary */}
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.45, duration: 0.5 }}
+        className="mb-6"
+      >
+        <ClientLoanInfo client={client} darkMode={darkMode} />
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -404,13 +426,7 @@ const ClientDetails = ({ clientId, onBack, onViewLoans, darkMode = false }) => {
                 </span>
               </div>
             </div>
-            <div className="flex items-center">
-              <span className={`font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'} w-32`}>Status:</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
-                <span className={`w-2 h-2 rounded-full mr-2 inline-block ${statusConfig.dotColor}`}></span>
-                {client.status || "Unknown"}
-              </span>
-            </div>
+           
           </div>
         </motion.div>
       </div>

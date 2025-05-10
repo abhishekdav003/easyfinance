@@ -3,12 +3,14 @@ import { loanDetails } from "../../services/api.js";
 // import LoanDetailsShow from "../details/LoanDetail.jsx";
 // import { getLoanDetailsById } from "../../services/api.js";
 import { motion } from "framer-motion";
+import { updateLoanStatus } from "../../services/api.js";
 
 const ClientLoans = ({ clientId, onBack, onViewLoanDetails, darkMode = false }) => {
   const [loans, setLoans] = useState([]);
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [processingLoanId, setProcessingLoanId] = useState(null);
 
   useEffect(() => {
     const fetchClientLoans = async () => {
@@ -48,6 +50,35 @@ const ClientLoans = ({ clientId, onBack, onViewLoanDetails, darkMode = false }) 
   const handleViewLoanDetails = (loanId) => {
     if (onViewLoanDetails) {
       onViewLoanDetails(loanId);
+    }
+  };
+
+  const handleMarkAsComplete = async (e, loanId) => {
+    // Stop event propagation to prevent triggering the parent onClick (view loan details)
+    e.stopPropagation();
+    
+    try {
+      setProcessingLoanId(loanId);
+      
+      // Call the updateLoanStatus API with the loan ID and status "Completed"
+      const response = await updateLoanStatus(clientId, loanId, { newstatus: "Completed" });
+      
+      if (response && response.data.data) {
+        // Update the local state to reflect the change
+        setLoans(loans.map(loan => {
+          if (loan._id === loanId) {
+            return { ...loan, status: "Completed" };
+          }
+          return loan;
+        }));
+        
+        console.log("Loan marked as complete:", loanId);
+      }
+    } catch (err) {
+      setError(`Failed to update loan status: ${err.message}`);
+      console.error("Error updating loan status:", err);
+    } finally {
+      setProcessingLoanId(null);
     }
   };
 
@@ -325,19 +356,46 @@ const ClientLoans = ({ clientId, onBack, onViewLoanDetails, darkMode = false }) 
                   )}
                 </div>
                 
-                <motion.div 
-                  whileHover={{ scale: 1.03 }}
-                  className="mt-5 flex justify-center"
-                >
-                  <button className={`${
-                    darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
-                  } font-medium text-sm transition-colors duration-300 flex items-center`}>
+                <div className="mt-5 flex justify-between items-center">
+                  <motion.button 
+                    whileHover={{ scale: 1.03 }}
+                    className={`${
+                      darkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
+                    } font-medium text-sm transition-colors duration-300 flex items-center`}
+                  >
                     View Details
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
-                  </button>
-                </motion.div>
+                  </motion.button>
+                  
+                  {/* Mark as Complete Button - Only show for Active loans */}
+                  {loan.status !== 'Completed' && (
+                    <motion.button
+                      onClick={(e) => handleMarkAsComplete(e, loan._id)}
+                      disabled={processingLoanId === loan._id}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`${
+                        darkMode 
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      } px-3 py-1.5 rounded text-xs font-medium transition-all duration-300 flex items-center`}
+                    >
+                      {processingLoanId === loan._id ? (
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : (
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                      )}
+                      Mark Complete
+                    </motion.button>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}

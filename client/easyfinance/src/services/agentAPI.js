@@ -35,7 +35,9 @@ export const loginAgent = (data) => {
       console.log('Agent logged in successfully:', agent);
       // Redirect or trigger further actions, like going to a dashboard
       // history.push("/dashboard");  // Example if using react-router
+      localStorage.setItem('agent', JSON.stringify(agent));
 
+      console.log('Agent logged in successfully:', agent);
       return response; // Return the response for further handling if needed
     })
     .catch((error) => {
@@ -59,7 +61,9 @@ export const getAllAgentClients = async () => {
 // Get details for a specific client
 export const getClientDetails = async (clientId) => {
   try {
-    const response = await API.get(`/agent/getClientdata/${clientId}`);
+    const response = await API.get(`/agent/getClientdata/${clientId}`, {
+      withCredentials: true, // ✅ Add this line
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error;
@@ -170,5 +174,51 @@ API.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+
+export const AgentGetloanDetails = async (clientId) => {
+  try {
+    const response = await API.get(`/agent/viewclientloan/${clientId}/loans`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching loan detail:", error);
+    throw error;
+  }
+};
+
+
+export const AgentcollectEMI = (clientId, loanId, data, isAgent = true) => {
+  const token = localStorage.getItem("accessToken"); // assuming you store it during login
+  return API.post(
+    `${isAgent ? '/agent' : '/admin'}/collectemi/${clientId}/${loanId}`,
+    data,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+};
+
+
+
+
+
+export const AgetAgentEmiCollection = async (agentId) => {
+  try {
+    const response = await API.get(`/agent/getEmiCollection/${agentId}`);
+    console.log("response", response);
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching agent EMI collection history:", error);
+    throw error;
+  }
+};
+
+
+
 
 export default API;

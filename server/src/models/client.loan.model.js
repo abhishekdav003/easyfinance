@@ -6,6 +6,8 @@ const emiSchema = new mongoose.Schema({
   amountCollected: { type: Number, required: true },
   status: { type: String, enum: ["Paid", "Defaulted" , "Partial"], default: "Paid" },
   collectedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Agent" },
+  paymentMode: { type: String, enum: ["Cash", "Cheque", "Online"], required: true },
+  recieverName: { type: String },
   location: {
     lat: Number,
     lng: Number,

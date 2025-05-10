@@ -18,7 +18,8 @@ import {
   loanDetails,
   collectEMI,
   viewEmiCollectionHistory,
-  getEmiCollectionData
+  getEmiCollectionData,
+  updateLoanStatus
   
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
@@ -47,7 +48,7 @@ router.route("/deleteagent/:agentId").delete(verifyAdminJwt , removeAgent)
 router.route("/deleteclient/:clientId").delete(verifyAdminJwt , removeClient) 
 
 // admin view client loan list ✅
-router.route("/viewclientloan/:clientId/loans").get(verifyAdminJwt , loanList) 
+router.route("/viewclientloan/:clientId/loans").get( loanList) 
 
 // admin remove loan 
 router.route("/removeloan/:clientId/loans/:loanId").delete(verifyAdminJwt , removeLoanFromClient) 
@@ -84,11 +85,12 @@ router.route("/getloandetails/:loanId").get(verifyAdminJwt , loanDetails)
 
 
 //collect emi ✅
-router.route("/collectemi/:clientId/:loanId").post(verifyAdminJwt , collectEMI); 
+router.route("/collectemi/:clientId/:loanId").post( verifyAdminJwt,collectEMI); 
 
 // viewEmiCollectionHistory
 
-router.route("/viewEmiCollectionHistory/:clientId/:loanId").post(verifyAdminJwt , viewEmiCollectionHistory);
+router.route("/viewEmiCollectionHistory/:clientId/:loanId").get(verifyAdminJwt , viewEmiCollectionHistory);
 
-router.route("/getEmiCollection/:agentId").post(verifyAdminJwt , getEmiCollectionData);
+router.route("/getEmiCollection/:agentId").get(verifyAdminJwt , getEmiCollectionData);
+router.route("/updateLoanStatus/:clientId/:loanId/status").post(verifyAdminJwt , updateLoanStatus);
 export default router;

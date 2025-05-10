@@ -133,9 +133,9 @@ export const agentLogout = asyncHandler(async (req, res) => {
 const clientTwilio = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
 const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM
 const toAdminNumber = process.env.ADMIN_WHATSAPP_TO
-export const collectEMI = asyncHandler(async (req, res) => {
+export const AgentcollectEMI = asyncHandler(async (req, res) => {
   const { clientId, loanId } = req.params;
-  const { amountCollected, status, location } = req.body;
+  const { amountCollected, status, location, paymentMode , recieverName } = req.body;  // Destructure paymentMode from request body
   const agentId = req.agent._id;
 
   const client = await Client.findById(clientId);
@@ -160,6 +160,8 @@ export const collectEMI = asyncHandler(async (req, res) => {
     status,
     collectedBy: agentId,
     location,
+    paymentMode, 
+    recieverName, // Include paymentMode in the EMI entry
   };
 
   loan.emiRecords.push(emiEntry);
@@ -168,23 +170,24 @@ export const collectEMI = asyncHandler(async (req, res) => {
   loan.updatedAt = new Date();
 
   // Calculate computed fields after EMI collection
-loan.paidEmis = loan.emiRecords.filter(e => e.status === "Paid").length;
+  loan.paidEmis = loan.emiRecords.filter(e => e.status === "Paid").length;
 
-// Estimate total EMIs from tenure
-const totalEmis = loan.tenureMonths ?? loan.tenureDays ?? 0;
-loan.totalEmis = totalEmis;
+  // Estimate total EMIs from tenure
+  const totalEmis = loan.tenureMonths ?? loan.tenureDays ?? 0;
+  loan.totalEmis = totalEmis;
 
-// Calculate next EMI date
-const nextDate = new Date();
-if (loan.emiType === "Monthly") nextDate.setMonth(nextDate.getMonth() + 1);
-else if (loan.emiType === "Weekly") nextDate.setDate(nextDate.getDate() + 7);
-else if (loan.emiType === "Daily") nextDate.setDate(nextDate.getDate() + 1);
-loan.nextEmiDate = nextDate;
+  // Calculate next EMI date
+  const nextDate = new Date();
+  if (loan.emiType === "Monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+  else if (loan.emiType === "Weekly") nextDate.setDate(nextDate.getDate() + 7);
+  else if (loan.emiType === "Daily") nextDate.setDate(nextDate.getDate() + 1);
+  loan.nextEmiDate = nextDate;
 
-// Compute interest and repayment
-loan.totalInterest = loan.totalPayable - loan.loanAmount;
-loan.totalRepayment = loan.totalPayable;
-console.log("Updated loan data:", loan);
+  // Compute interest and repayment
+  loan.totalInterest = loan.totalPayable - loan.loanAmount;
+  loan.totalRepayment = loan.totalPayable;
+  console.log("Updated loan data:", loan);
+  
   await client.save();
   
   const updatedLoan = client.loans.id(loanId);
@@ -195,7 +198,7 @@ console.log("Updated loan data:", loan);
   console.log("Paid EMIs:", loan.emiRecords.filter(e => e.status === "Paid").length);
   
 
-  const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${location.address}\n🙋‍♂️ *Collected By:* ${agent.fullname}`;
+  const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${location.address}\n🙋‍♂️ *Collected By:* ${agent.fullname}\n💳 *Payment Mode:* ${paymentMode}`;  // Added Payment Mode to message
 
   await clientTwilio.messages.create({
     from: fromWhatsAppNumber,
@@ -477,4 +480,51 @@ export const AgentaddClient = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(201, { newClient }, "Client and loan(s) added successfully")
     );
+});
+
+
+
+
+
+export const AgentgetEmiCollectionData = asyncHandler(async (req, res) => {
+  const { agentId } = req.params;  // agentId from the request params
+  console.log("agentId", agentId);
+  
+  // Fetch clients who have any EMI records collected by the specified agent
+  const clients = await Client.find({
+    "loans.emiRecords.collectedBy": agentId,  // Ensure we check EMI records collected by this agent
+  });
+
+  if (!clients.length) throw new ApiError(404, "No EMI collection data found for this agent");
+
+  const emiCollectionData = [];
+  let totalCollected = 0;
+
+  // Iterate through each client and their loans, and collect EMI data that matches the agentId
+  clients.forEach(client => {
+    client.loans.forEach(loan => {
+      loan.emiRecords.forEach(emi => {
+        // Check if the EMI was collected by the specified agent
+        if (emi.collectedBy?.toString() === agentId) {
+          emiCollectionData.push({
+            clientName: client.clientName,
+            loanNumber: loan.uniqueLoanNumber,
+            amountCollected: emi.amountCollected,
+            date: emi.date,
+            status: emi.status,
+            location: emi.location,
+          });
+          totalCollected += emi.amountCollected;  // Keep track of the total collected amount
+        }
+      });
+    });
+  });
+
+  // Send response with total collected and EMI records collected by this agent
+  res.status(200).json(
+    new ApiResponse(200, {
+      totalCollected,
+      emiCollectionData,
+    }, "EMI collection data retrieved successfully for the agent")
+  );
 });

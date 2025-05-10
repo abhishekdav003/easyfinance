@@ -13,7 +13,8 @@ const AgentEmiCollectionModal = ({ agentId, open, onClose }) => {
       setLoading(true);
       getAgentEmiCollection(agentId)
         .then((res) => {
-          setCollectionData(res.data.emiCollectionData);
+            console.log(res);
+            setCollectionData(res.data.emiCollectionData); 
           setTotal(res.data.totalCollected);
           setError("");
         })

@@ -134,14 +134,10 @@ export const getLoanDetailsById = async (loanId) => {
 //collect emi
 export const collectEMI = (clientId, loanId, data, isAgent) =>
   API.post(`${isAgent ? '/agent' : '/admin'}/collectemi/${clientId}/${loanId}`, data);
- 
-
-
-
 // collection history 
 export const getEmiCollectionHistory = async (clientId, loanId) => {
   try {
-    const response = await API.post(`/admin/viewEmiCollectionHistory/${clientId}/${loanId}`);
+    const response = await API.get(`/admin/viewEmiCollectionHistory/${clientId}/${loanId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching EMI collection history:", error);
@@ -150,10 +146,17 @@ export const getEmiCollectionHistory = async (clientId, loanId) => {
 };
 export const getAgentEmiCollection = async (agentId) => {
   try {
-    const response = await API.post(`/admin/getEmiCollectionData/${agentId}`);
+    const response = await API.get(`/admin/getEmiCollection/${agentId}`);
+    console.log("response", response);
+    
     return response.data;
   } catch (error) {
     console.error("Error fetching agent EMI collection history:", error);
     throw error;
   }
 };
+
+
+
+export const updateLoanStatus = async (clientId, loanId, data) =>
+  API.post(`/admin/updateLoanStatus/${clientId}/${loanId}/status`, data);

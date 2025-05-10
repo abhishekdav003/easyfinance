@@ -686,7 +686,7 @@ const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM
 const toAdminNumber = process.env.ADMIN_WHATSAPP_TO
 export const collectEMI = asyncHandler(async (req, res) => {
   const { clientId, loanId } = req.params;
-  const { amountCollected, status, location } = req.body;
+  const { amountCollected, status, location, paymentMode ,recieverName  } = req.body;  // Destructure paymentMode from request body
   const adminId = req.admin._id;
 
   console.log("🔁 collectEMI params:", req.params);
@@ -699,9 +699,8 @@ export const collectEMI = asyncHandler(async (req, res) => {
   if (!loan) throw new ApiError(404, "Loan not found");
 
   // Normalize status to match enum
-  const allowedStatuses = ["Paid",  "Defaulted"];
+  const allowedStatuses = ["Paid", "Defaulted"];
   const normalizedStatus = allowedStatuses.includes(status) ? status : "Paid";
-  
 
   // ✅ Check if EMI already collected today
   const today = new Date();
@@ -720,6 +719,9 @@ export const collectEMI = asyncHandler(async (req, res) => {
     status: normalizedStatus,
     collectedBy: adminId,
     location,
+    paymentMode,
+    recieverName
+      // Add paymentMode to EMI entry
   };
 
   loan.emiRecords.push(emiEntry);
@@ -752,30 +754,30 @@ export const collectEMI = asyncHandler(async (req, res) => {
   console.log("EMI status received:", normalizedStatus);
   console.log("All EMIs:", loan.emiRecords.map(e => e.status));
   console.log("Paid EMIs:", loan.emiRecords.filter(e => e.status === "Paid").length);
-  
 
   if (normalizedStatus === "Defaulted") {
     const messageBody = `⚠️ *EMI Default Alert!*\n\n📛 *Client:* ${client.clientName}\n💰 *Amount Due:* ₹${amountCollected}\n🕒 *Recorded At:* ${today.toLocaleString()}\n👨‍💼 *Updated By:* ${admin.username}\n\n🚨 Please take necessary action.`;
-
 
     await clientTwilio.messages.create({
       from: fromWhatsAppNumber,
       to: toAdminNumber,
       body: messageBody,
     });
-  }else{
-  const [lng, lat] = location.coordinates;
-const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`
-  const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${googleMapsLink}\n🙋‍♂️ *Collected By:* ${admin.username}`;
+  } else {
+    const [lng, lat] = location.coordinates;
+    const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+    const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${googleMapsLink}\n🙋‍♂️ *Collected By:* ${admin.username}\n💳 *Payment Mode:* ${paymentMode}`;  // Include Payment Mode
 
-  await clientTwilio.messages.create({
-    from: fromWhatsAppNumber,
-    to: toAdminNumber,
-    body: messageBody,
-  });
+    await clientTwilio.messages.create({
+      from: fromWhatsAppNumber,
+      to: toAdminNumber,
+      body: messageBody,
+    });
   }
+
   res.status(200).json(new ApiResponse(200, updatedLoan, "EMI collected and recorded successfully"));
 });
+
 
 
 
@@ -801,20 +803,23 @@ export const viewEmiCollectionHistory = asyncHandler(async (req, res) => {
 
 // get emi collection data of particular agent
 export const getEmiCollectionData = asyncHandler(async (req, res) => {
-  const { agentId } = req.params;
+  const { agentId } = req.params;  // agentId from the request params
 
+  // Fetch clients who have any EMI records collected by the specified agent
   const clients = await Client.find({
-    "loans.emiRecords.collectedBy": agentId,
+    "loans.emiRecords.collectedBy": agentId,  // Ensure we check EMI records collected by this agent
   });
 
-  if (!clients.length) throw new ApiError(404, "No EMI collection data found");
+  if (!clients.length) throw new ApiError(404, "No EMI collection data found for this agent");
 
   const emiCollectionData = [];
   let totalCollected = 0;
 
+  // Iterate through each client and their loans, and collect EMI data that matches the agentId
   clients.forEach(client => {
     client.loans.forEach(loan => {
       loan.emiRecords.forEach(emi => {
+        // Check if the EMI was collected by the specified agent
         if (emi.collectedBy?.toString() === agentId) {
           emiCollectionData.push({
             clientName: client.clientName,
@@ -824,16 +829,42 @@ export const getEmiCollectionData = asyncHandler(async (req, res) => {
             status: emi.status,
             location: emi.location,
           });
-          totalCollected += emi.amountCollected;
+          totalCollected += emi.amountCollected;  // Keep track of the total collected amount
         }
       });
     });
   });
 
+  // Send response with total collected and EMI records collected by this agent
   res.status(200).json(
     new ApiResponse(200, {
       totalCollected,
       emiCollectionData,
-    }, "EMI collection data retrieved successfully")
+    }, "EMI collection data retrieved successfully for the agent")
   );
+});
+
+
+
+// loan status 
+export const updateLoanStatus = asyncHandler(async (req, res) => {
+  const allowedStatuses = ["Ongoing", "Completed"];
+  const { clientId, loanId } = req.params;
+  const newstatus = req.body.newstatus || req.body.status;
+
+
+  if (!allowedStatuses.includes(newstatus))
+    throw new ApiError(400, "Invalid status value");
+
+  const client = await Client.findById(clientId);
+  if (!client) throw new ApiError(404, "Client not found");
+
+  const loan = client.loans.id(loanId);
+  if (!loan) throw new ApiError(404, "Loan not found");
+
+  loan.status = newstatus;
+
+  await client.save(); // Save the parent document
+
+  res.status(200).json(new ApiResponse(200, loan, "Loan status updated successfully"));
 });

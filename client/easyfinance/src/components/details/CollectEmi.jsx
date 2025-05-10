@@ -28,8 +28,9 @@ function CollectEMI({
       coordinates: [0, 0],
       address: "Unknown location",
     },
+    paymentMode: "Cash",
+    recieverName: "",
   });
-
   useEffect(() => {
     const fetchClientData = async () => {
       try {
@@ -160,6 +161,9 @@ function CollectEMI({
           amountCollected: Number(formData.amountCollected),
           status: formData.status,
           location: formData.location,
+          paymentMode: formData.paymentMode,
+          recieverName:
+            formData.paymentMode !== "cash" ? formData.recieverName : "",
         },
         isAgent
       );
@@ -209,8 +213,19 @@ function CollectEMI({
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 transform transition-all duration-300 hover:shadow-2xl">
           <div className="flex items-center justify-center mb-6">
             <div className="bg-blue-600 rounded-full p-3 mr-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-white"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-blue-700 text-center">
@@ -221,7 +236,9 @@ function CollectEMI({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-10">
               <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
-              <p className="text-blue-600 font-medium">Loading client details...</p>
+              <p className="text-blue-600 font-medium">
+                Loading client details...
+              </p>
             </div>
           ) : error ? (
             <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6 animate-pulse">
@@ -259,7 +276,9 @@ function CollectEMI({
                   EMI Amount
                 </label>
                 <div className="relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                    ₹
+                  </span>
                   <input
                     type="number"
                     name="amountCollected"
@@ -270,7 +289,7 @@ function CollectEMI({
                   />
                 </div>
               </div>
-              
+
               <div className="transform transition-all duration-200 hover:translate-y-px">
                 <label className="block text-sm font-semibold text-blue-700 mb-2">
                   EMI Status
@@ -280,7 +299,13 @@ function CollectEMI({
                   value={formData.status}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 shadow-sm appearance-none bg-white"
-                  style={{ backgroundImage: "url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"%232563EB\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg>')", backgroundRepeat: "no-repeat", backgroundPosition: "right 1rem center", paddingRight: "3rem" }}
+                  style={{
+                    backgroundImage:
+                      'url(\'data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>\')',
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 1rem center",
+                    paddingRight: "3rem",
+                  }}
                 >
                   <option value="Paid">Paid</option>
                   <option value="Defaulted">Defaulted</option>
@@ -289,9 +314,25 @@ function CollectEMI({
 
               <div className="transform transition-all duration-200 hover:translate-y-px">
                 <label className=" text-sm font-semibold text-blue-700 mb-2 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
                   </svg>
                   Current Location
                 </label>
@@ -315,11 +356,51 @@ function CollectEMI({
                   {locationError}
                 </div>
               )}
+              {/* Payment Mode */}
+              <div className="transform transition-all duration-200 hover:translate-y-px">
+                <label className="block text-sm font-semibold text-blue-700 mb-2">
+                  Payment Mode
+                </label>
+                <select
+                  name="paymentMode"
+                  value={formData.paymentMode}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm appearance-none"
+                  style={{
+                    backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%232563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>')`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 1rem center",
+                    paddingRight: "3rem",
+                  }}
+                >
+                  <option value="Cash">Cash</option>
 
+                  <option value="Cheque">Cheque</option>
+                  <option value="Online">Online</option>
+                </select>
+              </div>
+
+              {formData.paymentMode !== "cash" && (
+                <div className="transform transition-all duration-200 hover:translate-y-px">
+                  <label className="block text-sm font-semibold text-blue-700 mb-2">
+                    Receiver Name
+                  </label>
+                  <input
+                    type="text"
+                    name="recieverName"
+                    value={formData.recieverName}
+                    onChange={handleChange}
+                    placeholder="Enter Receiver's Name"
+                    className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm transition-all duration-200"
+                  />
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={submitting}
-                className={`w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center ${submitting ? "opacity-75 cursor-not-allowed" : ""}`}
+                className={`w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center ${
+                  submitting ? "opacity-75 cursor-not-allowed" : ""
+                }`}
               >
                 {submitting ? (
                   <>
@@ -328,8 +409,19 @@ function CollectEMI({
                   </>
                 ) : (
                   <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
                     </svg>
                     Collect EMI
                   </>
@@ -339,8 +431,19 @@ function CollectEMI({
               {success && (
                 <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-md animate-pulse">
                   <div className="flex">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     <p className="font-medium">EMI Collected Successfully!</p>
                   </div>
