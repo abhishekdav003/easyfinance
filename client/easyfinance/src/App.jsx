@@ -6,6 +6,7 @@ import "./App.css";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/Loginpage";
 import AgentDashboard from "./pages/AgentDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
 
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Separate Routes for Admin and Agent */}
         <Route

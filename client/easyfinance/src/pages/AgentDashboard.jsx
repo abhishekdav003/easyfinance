@@ -8,12 +8,12 @@ import {
   BarChart3, 
   Calendar,
   Activity,
-  Loader2
+  Loader2, LogOut
 } from 'lucide-react';
 import AgentAddClientForm from '../components/forms/AgentClientRegForm';
 import AgentGetLoan from '../components/details/AgentGetLoan';
 import AgentEmiCollection from '../components/details/AgentCollectEmi';
-import { getAllAgentClients, addClient } from '../services/agentAPI';
+import { getAllAgentClients, addClient, logout } from '../services/agentAPI';
 
 import RecentActivity from "../pages/AgentRecentActivity";
 
@@ -25,6 +25,7 @@ export default function AgentDashboard() {
   const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedLoan, setSelectedLoan] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [stats, setStats] = useState({
     totalClients: 0,
     totalLoans: 0,
@@ -88,6 +89,23 @@ export default function AgentDashboard() {
     setFilteredClients(filtered);
   };
 
+  const handleLogout = async () => {
+      setIsLoggingOut(true);
+      try {
+        const response = await logout();
+        if (response.success) {
+          // Redirect to login page after successful logout
+          window.location.href = '/login';
+        } else {
+          console.error("Logout failed:", response.message);
+        }
+      } catch (error) {
+        console.error("Error during logout:", error);
+      } finally {
+        setIsLoggingOut(false);
+      }
+    };
+
   const handleViewClient = (client) => {
     setSelectedClient(client);
   };
@@ -110,6 +128,18 @@ export default function AgentDashboard() {
               <Calendar className="h-4 w-4 mr-1" />
               {new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
+            <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200"
+          >
+            {isLoggingOut ? (
+              <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></div>
+            ) : (
+              <LogOut className="h-5 w-5" />
+            )}
+            <span className="hidden sm:inline">Logout</span>
+          </button>
           </div>
         </div>
       </header>

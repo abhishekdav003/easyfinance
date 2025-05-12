@@ -19,78 +19,99 @@ import {
   collectEMI,
   viewEmiCollectionHistory,
   getEmiCollectionData,
-  updateLoanStatus
-  
+  updateLoanStatus,
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
+// Import the password reset controller functions
+import {
+  requestPasswordReset,
+  verifyOTP,
+  resetPassword,
+} from "../controllers/auth.controller.js"; // Create this file or update your existing one
+
 const router = Router();
 
-router.route("/register").post(upload.single("profileImage")  , registerAdmin) 
-router.route("/login").post(adminLogin) 
+// Public auth routes
+router.route("/register").post(upload.single("profileImage"), registerAdmin);
+router.route("/login").post(adminLogin);
 
-router.route("/addagent").post(upload.single("photo") ,addAgent) 
+// Password reset routes (public)
+router.route("/request-password-reset").post(requestPasswordReset);
+router.route("/verify-otp").post(verifyOTP);
+router.route("/reset-password").post(resetPassword);
 
+// Agent management
+router.route("/addagent").post(upload.single("photo"), addAgent);
 
-
-// secured routes 
+// Secured routes
 //logout admin ✅
-router.route("/logout").post(verifyAdminJwt ,logoutAdmin) 
+router.route("/logout").post(verifyAdminJwt, logoutAdmin);
 
 // admin add loan to client ✅
-router.route("/addloantoclient/:clientId").post(verifyAdminJwt ,addLoanToClient) 
+router
+  .route("/addloantoclient/:clientId")
+  .post(verifyAdminJwt, addLoanToClient);
 
 // admin remove agent ✅
-router.route("/deleteagent/:agentId").delete(verifyAdminJwt , removeAgent) 
+router.route("/deleteagent/:agentId").delete(verifyAdminJwt, removeAgent);
 
 // admin remove client ✅
-router.route("/deleteclient/:clientId").delete(verifyAdminJwt , removeClient) 
+router.route("/deleteclient/:clientId").delete(verifyAdminJwt, removeClient);
 
 // admin view client loan list ✅
-router.route("/viewclientloan/:clientId/loans").get( loanList) 
+router.route("/viewclientloan/:clientId/loans").get(loanList);
 
-// admin remove loan 
-router.route("/removeloan/:clientId/loans/:loanId").delete(verifyAdminJwt , removeLoanFromClient) 
+// admin remove loan
+router
+  .route("/removeloan/:clientId/loans/:loanId")
+  .delete(verifyAdminJwt, removeLoanFromClient);
 
 // admin get client all details ✅
-router.route("/getClientdata/:clientId").get(verifyAdminJwt , clientDetails) 
+router.route("/getClientdata/:clientId").get(verifyAdminJwt, clientDetails);
 
 // admin get agent list ✅
-router.route("/allagents").get(verifyAdminJwt , agentList)
+router.route("/allagents").get(verifyAdminJwt, agentList);
 
 // admin get all clients list  ✅
-router.route("/allclients").get(verifyAdminJwt , clientList) 
+router.route("/allclients").get(verifyAdminJwt, clientList);
 
 // admin get agent all details
-router.route("/getagentdetails/:agentId").get(verifyAdminJwt , agentDetails)
-
-// router.route("/getClientdetails/:agentId").get(verifyAdminJwt , clientDetails)
+router.route("/getagentdetails/:agentId").get(verifyAdminJwt, agentDetails);
 
 // admin get dashboard analytics ✅
-router.route("/dashboard").get(verifyAdminJwt , getAdminDashboardAnalytics) 
+router.route("/dashboard").get(verifyAdminJwt, getAdminDashboardAnalytics);
 
 // admin add client ✅
-router.route("/addclient").post(upload.fields([
-  { name: "clientPhoto", maxCount: 1 },
-  { name: "shopPhoto", maxCount: 1 },
-  { name: "housePhoto", maxCount: 1 },
-  { name: "documents", maxCount: 10 },
-]) , verifyAdminJwt , addClient) 
-
-
+router.route("/addclient").post(
+  upload.fields([
+    { name: "clientPhoto", maxCount: 1 },
+    { name: "shopPhoto", maxCount: 1 },
+    { name: "housePhoto", maxCount: 1 },
+    { name: "documents", maxCount: 10 },
+  ]),
+  verifyAdminJwt,
+  addClient
+);
 
 // loan details ✅
-router.route("/getloandetails/:loanId").get(verifyAdminJwt , loanDetails)
-
+router.route("/getloandetails/:loanId").get(verifyAdminJwt, loanDetails);
 
 //collect emi ✅
-router.route("/collectemi/:clientId/:loanId").post( verifyAdminJwt,collectEMI); 
+router.route("/collectemi/:clientId/:loanId").post(verifyAdminJwt, collectEMI);
 
 // viewEmiCollectionHistory
+router
+  .route("/viewEmiCollectionHistory/:clientId/:loanId")
+  .get(verifyAdminJwt, viewEmiCollectionHistory);
 
-router.route("/viewEmiCollectionHistory/:clientId/:loanId").get(verifyAdminJwt , viewEmiCollectionHistory);
+router
+  .route("/getEmiCollection/:agentId")
+  .get(verifyAdminJwt, getEmiCollectionData);
 
-router.route("/getEmiCollection/:agentId").get(verifyAdminJwt , getEmiCollectionData);
-router.route("/updateLoanStatus/:clientId/:loanId/status").post(verifyAdminJwt , updateLoanStatus);
+router
+  .route("/updateLoanStatus/:clientId/:loanId/status")
+  .post(verifyAdminJwt, updateLoanStatus);
+
 export default router;

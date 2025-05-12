@@ -7,8 +7,6 @@ const API = axios.create({
   withCredentials: true, // ✅ This sends cookies with every request
 });
 
-
-
 // Login Agent
 export const loginAgent = (data) => {
   const isEmail = data.emailOrUsername.includes("@");
@@ -17,7 +15,7 @@ export const loginAgent = (data) => {
     password: data.password,
     ...(isEmail
       ? { email: data.emailOrUsername }
-      : { agentusername: data.emailOrUsername }), // Use 'agentusername' for consistency with your backend
+      : { agentusername: data.emailOrUsername }), //Use 'agentusername' for consistency with your backend
   };
 
   return API.post("/agent/login", payload)
@@ -119,6 +117,14 @@ export const updateAgentProfile = async (profileData) => {
   }
 };
 
+export const logout = async () => {
+  try {
+    const response = await API.post("/agent/logout");
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
 
 
 // Agent logout
