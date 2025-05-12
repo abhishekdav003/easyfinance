@@ -249,7 +249,10 @@ const AgentManagement = () => {
                         </div>
                         <div className="flex space-x-1">
                           <button
-                            onClick={() => navigate(`/edit-agent/${agent._id}`)}
+                            onClick={() => {
+                              setSelectedAgentId(agent._id);
+                              setModalOpen(true);
+                            }}
                             className="p-1.5 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors"
                             title="Edit Agent"
                           >

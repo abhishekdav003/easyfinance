@@ -174,3 +174,17 @@ export const getAgentEmiCollection = async (agentId) => {
 
 export const updateLoanStatus = async (clientId, loanId, data) =>
   API.post(`/admin/updateLoanStatus/${clientId}/${loanId}/status`, data);
+
+
+
+
+export const getTodayCollections = async () => {
+  try {
+    const response = await API.get("/admin/today-collections");
+    console.log("Today's collections response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching today's collections:", error);
+    throw error;
+  }
+};

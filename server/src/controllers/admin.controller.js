@@ -868,3 +868,63 @@ export const updateLoanStatus = asyncHandler(async (req, res) => {
 
   res.status(200).json(new ApiResponse(200, loan, "Loan status updated successfully"));
 });
+
+
+
+
+
+ 
+export const TodayCollection = asyncHandler(async (req, res) => {
+ 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of the day
+    
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Fetch client data with today's EMI records
+  const clients = await Client.find({
+    "loans.emiRecords.date": {
+      $gte: today,
+      $lt: tomorrow
+    }
+  }).populate({
+    path: 'loans.emiRecords.collectedBy',
+    model: 'Agent',
+    select: 'fullname'
+  });
+  const todayCollections = [];
+    
+    for (const client of clients) {
+      for (const loan of client.loans) {
+        for (const emi of loan.emiRecords) {
+          // Check if the EMI was collected today
+          const emiDate = new Date(emi.date);
+          if (emiDate >= today && emiDate < tomorrow) {
+            // Find the agent who collected this EMI
+            let agentName = "Admin";
+            if (emi.collectedBy) {
+              agentName = emi.collectedBy.fullname;
+            }
+            
+            // Add formatted collection data
+            todayCollections.push({
+              clientName: client.clientName,
+              loanNumber: loan.uniqueLoanNumber,
+              amountCollected: emi.amountCollected,
+              status: emi.status,
+              paymentMode: emi.paymentMode,
+              agentName: agentName,
+              date: emi.date,
+              location: emi.location,
+              recieverName: emi?.recieverName || "Cash Payment"
+            });
+          }
+        }
+      }
+    }
+
+    todayCollections.sort((a, b) => new Date(b.date) - new Date(a.date));
+    res.status(200).json(new ApiResponse(200, todayCollections, "Today's collection data retrieved successfully"));
+
+})
