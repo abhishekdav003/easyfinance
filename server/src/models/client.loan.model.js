@@ -18,7 +18,10 @@ const emiSchema = new mongoose.Schema({
 
 const defaultedEmiSchema = new mongoose.Schema({
   date: { type: Date, required: true },
-  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "Client" },
+  clientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Client", // 🔁 This name must match the model name exactly
+  },
   loanId: { type: mongoose.Schema.Types.ObjectId, ref: "Loan" },
 });
 

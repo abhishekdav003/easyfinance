@@ -25,7 +25,6 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
   }
 
   if (!emis || emis.length === 0) {
-
     return <div className="p-4 text-gray-500">No default EMIs found.</div>;
   }
 
@@ -44,21 +43,26 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
         <table className="w-full table-auto border">
           <thead className="bg-gray-100">
             <tr>
+              <th className="px-4 py-2 text-left">Client Name</th> {/* 🆕 */}
               <th className="px-4 py-2 text-left">Amount</th>
               <th className="px-4 py-2 text-left">Due Date</th>
               <th className="px-4 py-2 text-left">Status</th>
-              <th className="px-4 py-2 text-left">Loan id</th>
+              <th className="px-4 py-2 text-left">Loan ID</th>
               <th className="px-4 py-2 text-left">Action</th>
-              
             </tr>
           </thead>
+
           <tbody>
             {emis.map((emi) => (
               <tr key={emi._id} className="border-t">
+                <td className="px-4 py-2">{emi.clientId?.name || "Unknown"}</td>{" "}
+                {/* 🆕 */}
                 <td className="px-4 py-2">{emi.amount}</td>
-                <td className="px-4 py-2">{new Date(emi.date).toLocaleDateString()}</td>
+                <td className="px-4 py-2">
+                  {new Date(emi.date).toLocaleDateString()}
+                </td>
                 <td className="px-4 py-2 text-red-600">Defaulted</td>
-                <td className="px-4 py-2 text-red-600">{emi.loanId}</td>
+                <td className="px-4 py-2">{emi.loanId}</td>
                 <td className="px-4 py-2">
                   <button className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
                     Pay Now
