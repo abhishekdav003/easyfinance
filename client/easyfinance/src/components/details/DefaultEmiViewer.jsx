@@ -2,10 +2,13 @@ import React, { useEffect, useState } from "react";
 import { fetchDefaultemis } from "../../services/api"; // assume this takes clientId
 import { X } from "lucide-react";
 
+import PayDefaultEmiForm from "../forms/PayDefaultEmiForm";
+
 const DefaultEmiViewer = ({ clientId, onClose }) => {
   const [emis, setEmis] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [selectedEmi, setSelectedEmi] = useState(null);
+  
   useEffect(() => {
     const loadEmis = async () => {
       try {
@@ -27,6 +30,15 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
     }
   };
 
+  const refreshAfterPay = () => {
+    setSelectedEmi(null);
+    // re-fetch default EMIs
+    setLoading(true);
+    fetchDefaultemis(clientId)
+      .then((data) => setEmis(data))
+      .finally(() => setLoading(false));
+  };
+  
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -60,7 +72,7 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black/90 bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl relative">
@@ -103,10 +115,10 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
               {emis.map((emi, index) => (
                 <tr key={emi._id || index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {emi.clientId?.clientName || "Atul"}
+                    {emi.clientId?.clientName || "Unknown"}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {emi.amount || "₹10,000"}
+                    {emi.amount || emi.amountDue || "₹0"}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
                     {new Date(emi.date || new Date()).toLocaleDateString()}
@@ -115,10 +127,13 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
                     <span className="text-red-600 font-medium">Defaulted</span>
                   </td>
                   <td className="px-6 py-4 text-sm font-mono text-gray-900">
-                    {emi.loanId || "6822c967efe0ea3dfd149124"}
+                    {emi.loanId || "N/A"}
                   </td>
                   <td className="px-6 py-4 text-sm">
-                    <button className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                    <button 
+                      className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                      onClick={() => setSelectedEmi(emi)}
+                    >
                       Pay Now
                     </button>
                   </td>
@@ -128,6 +143,14 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
           </table>
         </div>
       </div>
+
+      {selectedEmi && (
+        <PayDefaultEmiForm
+          emi={selectedEmi}
+          onClose={() => setSelectedEmi(null)}
+          onSuccess={refreshAfterPay}
+        />
+      )}
     </div>
   );
 };
