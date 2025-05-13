@@ -252,7 +252,7 @@ const ClientManagement = ({
           </div>
 
           {/* Add Client Form */}
-          {showForm && <AddClientForm onClientAdded={handleClientAdded} darkMode={darkMode} />}
+          {showForm && <AddClientForm onClientAdded={handleClientAdded} darkMode={darkMode}   onClose={() => setShowForm(false)}  />}
 
           {/* Client List Table for medium screens and up */}
           <div className={`hidden sm:block ${

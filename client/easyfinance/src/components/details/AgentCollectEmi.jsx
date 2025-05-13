@@ -71,14 +71,15 @@ const AgentEmiCollection = ({ clientId, loanId, onClose }) => {
         status: formData.status,
         location: formData.location,
         paymentMode: formData.paymentMode,
-        recieverName: formData.paymentMode !== "Cash" ? formData.recieverName : "", // Only send receiver name if payment mode is not Cash
+        recieverName: formData.paymentMode !== "Cash" ? formData.recieverName : "",
       });
-
+  
       if (response?.data?.success) {
         setSuccess(true);
         setTimeout(() => {
           setSuccess(false);
-          onClose();
+          if (onClose) onClose();
+          window.location.reload(); // ✅ reloads the page
         }, 1000);
       } else {
         setError("EMI submission failed");
@@ -87,6 +88,7 @@ const AgentEmiCollection = ({ clientId, loanId, onClose }) => {
       setError("Error collecting EMI");
     }
   };
+  
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow">

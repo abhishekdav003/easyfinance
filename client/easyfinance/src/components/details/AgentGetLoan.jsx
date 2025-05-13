@@ -65,13 +65,17 @@ const AgentGetClientLoans = ({ clientId, onBack, onCollectEmi }) => {
                     {loan.startDate ? new Date(loan.startDate).toLocaleDateString() : "N/A"}
                   </td>
                   <td className="px-4 py-2">
-                    <button
-                      onClick={() => onCollectEmi && onCollectEmi(loan)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
-                    >
-                      Collect EMI
-                    </button>
-                  </td>
+  {loan.status === "Completed" ? (
+    <span className="text-green-600 font-semibold">Loan Completed</span>
+  ) : (
+    <button
+      onClick={() => onCollectEmi && onCollectEmi(loan)}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+    >
+      Collect EMI
+    </button>
+  )}
+</td>
                 </tr>
               ))}
             </tbody>

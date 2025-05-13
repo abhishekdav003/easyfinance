@@ -23,7 +23,7 @@ function CollectEMI({
 
   const [formData, setFormData] = useState({
     amountCollected: "",
-    status: "paid",
+    status: "Paid",
     location: {
       coordinates: [0, 0],
       address: "Unknown location",
@@ -136,10 +136,12 @@ function CollectEMI({
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Submitting EMI for:", clientId, loanId, formData);
-    if (!formData.amountCollected || formData.amountCollected <= 0) {
-      setError("Please enter a valid amount");
-      return;
-    }
+
+    // if (!formData.amountCollected || formData.amountCollected <= 0) {
+    //   setError("Please enter a valid amount");
+    //   return;
+    // }
+
     if (
       !userLocation ||
       !userLocation.coordinates ||
@@ -150,6 +152,7 @@ function CollectEMI({
       );
       return;
     }
+
     try {
       setSubmitting(true);
       setError(null);
@@ -171,6 +174,11 @@ function CollectEMI({
       if (response.data.success) {
         setSuccess(true);
         if (onClose) onClose();
+
+        // ✅ Reload the page after a brief delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         setError(response.data.message || "Failed to collect EMI");
       }
@@ -184,15 +192,22 @@ function CollectEMI({
     }
   };
 
+  const markAsDefaulted = () => {
+    setFormData((prev) => ({
+      ...prev,
+      status: "Defaulted",
+    }));
+    handleSubmit({ preventDefault: () => {} }); // Simulate a submit event
+  };
   const getStatusBasedOnAmount = () => {
-    if (!loan || !formData.amountCollected) return "paid";
+    if (!loan || !formData.amountCollected) return "Defaulted";
 
     const amount = parseFloat(formData.amountCollected);
     const emiAmount = loan.emiAmount || 0;
 
-    if (amount >= emiAmount) return "paid";
-    if (amount > 0) return "partial";
-    return "missed";
+    if (amount >= emiAmount) return "Paid";
+    if (amount > 0) return "Partial";
+    return "Defaulted";
   };
 
   useEffect(() => {
@@ -427,6 +442,16 @@ function CollectEMI({
                   </>
                 )}
               </button>
+              <button
+                variant="outlined"
+                color="error"
+                disabled={submitting}
+                style={{ marginLeft: "10px" }}
+                onClick={markAsDefaulted}
+              >
+                Mark EMI as Default
+              </button>
+             
 
               {success && (
                 <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-md animate-pulse">

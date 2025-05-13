@@ -20,8 +20,10 @@ import {
   viewEmiCollectionHistory,
   getEmiCollectionData,
   updateLoanStatus,
-  TodayCollection
-  
+  TodayCollection,
+  getDefaultEmi,
+  payDefaultEmi,
+  getDefaultEmiById,
 } from "../controllers/admin.controller.js";
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -32,6 +34,7 @@ import {
   verifyOTP,
   resetPassword,
 } from "../controllers/auth.controller.js"; // Create this file or update your existing one
+
 
 const router = Router();
 
@@ -48,6 +51,14 @@ router.route("/reset-password").post(resetPassword);
 router.route("/addagent").post(upload.single("photo"), addAgent);
 
 // Secured routes
+
+router.route("/register").post(upload.single("profileImage"), registerAdmin);
+router.route("/login").post(adminLogin);
+
+router.route("/addagent").post(upload.single("photo"), addAgent);
+
+// secured routes
+
 //logout admin ✅
 router.route("/logout").post(verifyAdminJwt, logoutAdmin);
 
@@ -67,7 +78,11 @@ router.route("/viewclientloan/:clientId/loans").get(loanList);
 
 // admin remove loan
 router
+
   .route("/removeloan/:clientId/loans/:loanId")
+
+  .route("/deleteLoan/:clientId/:loanId")
+
   .delete(verifyAdminJwt, removeLoanFromClient);
 
 // admin get client all details ✅
@@ -81,6 +96,7 @@ router.route("/allclients").get(verifyAdminJwt, clientList);
 
 // admin get agent all details
 router.route("/getagentdetails/:agentId").get(verifyAdminJwt, agentDetails);
+
 
 // admin get dashboard analytics ✅
 router.route("/dashboard").get(verifyAdminJwt, getAdminDashboardAnalytics);
@@ -104,12 +120,41 @@ router.route("/getloandetails/:loanId").get(verifyAdminJwt, loanDetails);
 router.route("/collectemi/:clientId/:loanId").post(verifyAdminJwt, collectEMI);
 
 // viewEmiCollectionHistory
+
 router
   .route("/viewEmiCollectionHistory/:clientId/:loanId")
   .get(verifyAdminJwt, viewEmiCollectionHistory);
 
-router.route("/getEmiCollection/:agentId").get(verifyAdminJwt , getEmiCollectionData);
-router.route("/updateLoanStatus/:clientId/:loanId/status").post(verifyAdminJwt , updateLoanStatus);
 
-router.route('/today-collections').get(verifyAdminJwt, TodayCollection);
+router
+  .route("/viewEmiCollectionHistory/:clientId/:loanId")
+  .get(verifyAdminJwt, viewEmiCollectionHistory);
+
+router
+  .route("/getEmiCollection/:agentId")
+  .get(verifyAdminJwt, getEmiCollectionData);
+router
+  .route("/updateLoanStatus/:clientId/:loanId/status")
+  .post(verifyAdminJwt, updateLoanStatus);
+
+router.route("/today-collections").get(verifyAdminJwt, TodayCollection);
+
+
+
+
+/// get defaulted client t
+
+router
+  .route("/clients/default-emis")
+  .get(verifyAdminJwt, getDefaultEmi);
+
+router
+  .route("/clients/:clientId/default-emis")
+  .get(verifyAdminJwt, getDefaultEmiById);
+
+// pay defualted emi of a loan 
+
+router
+  .route("/clients/:clientId/loans/:loanId/pay-default-emi")
+  .post(verifyAdminJwt, payDefaultEmi);
 export default router;

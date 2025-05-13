@@ -15,6 +15,17 @@ const emiSchema = new mongoose.Schema({
   },
 });
 
+
+const defaultedEmiSchema = new mongoose.Schema({
+  date: { type: Date, required: true },
+  clientId: { type: mongoose.Schema.Types.ObjectId, ref: "Client" },
+  loanId: { type: mongoose.Schema.Types.ObjectId, ref: "Loan" },
+});
+
+const DefaultedEMI = mongoose.model("DefaultedEMI", defaultedEmiSchema);
+export { DefaultedEMI };
+
+
 // Loan Schema (Embedded in Client)
 const loanSchema = new mongoose.Schema({
   uniqueLoanNumber: { type: String, required: true },
@@ -77,3 +88,6 @@ export { Loan };
 
 const EMI = mongoose.model("EMI", emiSchema);
 export { EMI };
+
+
+
