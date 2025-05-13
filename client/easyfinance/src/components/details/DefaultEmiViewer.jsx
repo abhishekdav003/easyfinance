@@ -44,7 +44,7 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
           <thead className="bg-gray-100">
             <tr>
               <th className="px-4 py-2 text-left">Client Name</th> {/* 🆕 */}
-              <th className="px-4 py-2 text-left">Amount</th>
+              <th className="px-4 py-2 text-left">Amount Due</th>
               <th className="px-4 py-2 text-left">Due Date</th>
               <th className="px-4 py-2 text-left">Status</th>
               <th className="px-4 py-2 text-left">Loan ID</th>
@@ -57,7 +57,7 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
               <tr key={emi._id} className="border-t">
                 <td className="px-4 py-2">{emi.clientId?.clientName || "Unknown"}</td>
                 {/* 🆕 */}
-                <td className="px-4 py-2">{emi.amount}</td>
+                <td className="px-4 py-2">{emi.amountDue}</td>
                 <td className="px-4 py-2">
                   {new Date(emi.date).toLocaleDateString()}
                 </td>

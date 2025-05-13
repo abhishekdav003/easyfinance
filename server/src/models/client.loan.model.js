@@ -23,6 +23,7 @@ const defaultedEmiSchema = new mongoose.Schema({
     ref: "Client", // 🔁 This name must match the model name exactly
   },
   loanId: { type: mongoose.Schema.Types.ObjectId, ref: "Loan" },
+  amountDue: { type: Number, required: true },
 });
 
 const DefaultedEMI = mongoose.model("DefaultedEMI", defaultedEmiSchema);

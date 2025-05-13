@@ -755,6 +755,7 @@ export const collectEMI = asyncHandler(async (req, res) => {
         date: emiDate,
         clientId,
         loanId,
+        amountDue: emiAmount,
         location,
         recordedBy: adminId,
         reason: "Marked Default", // optionally add more info
@@ -771,7 +772,10 @@ export const collectEMI = asyncHandler(async (req, res) => {
   }
 
   // Total collected and remaining
-  loan.totalCollected += amountCollected;
+  if (status !== "Defaulted") {
+    loan.totalCollected += amountCollected;
+  }
+  
   loan.totalAmountLeft = loan.totalPayable - loan.totalCollected;
   loan.updatedAt = new Date();
 
