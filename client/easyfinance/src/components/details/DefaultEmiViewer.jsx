@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { fetchDefaultemis } from "../../services/api"; // assume this takes clientId
-
+import PayDefaultEmiForm from "../forms/PayDefaultEmiForm";
 const DefaultEmiViewer = ({ clientId, onClose }) => {
   const [emis, setEmis] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const [selectedEmi, setSelectedEmi] = useState(null);
   useEffect(() => {
     const loadEmis = async () => {
       try {
@@ -20,6 +20,15 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
     loadEmis();
   }, [clientId]);
 
+
+  const refreshAfterPay = () => {
+    setSelectedEmi(null);
+    // re-fetch default EMIs
+    setLoading(true);
+    fetchDefaultemis(clientId)
+      .then((data) => setEmis(data))
+      .finally(() => setLoading(false));
+  };
   if (loading) {
     return <div className="p-4 text-gray-500">Loading default EMIs...</div>;
   }
@@ -64,15 +73,25 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
                 <td className="px-4 py-2 text-red-600">Defaulted</td>
                 <td className="px-4 py-2">{emi.loanId}</td>
                 <td className="px-4 py-2">
-                  <button className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
-                    Pay Now
-                  </button>
+                <button
+                      className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                      onClick={() => setSelectedEmi(emi)}
+                    >
+                      Pay Now
+                    </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {selectedEmi && (
+        <PayDefaultEmiForm
+          emi={selectedEmi}
+          onClose={() => setSelectedEmi(null)}
+          onSuccess={refreshAfterPay}
+        />
+      )}
     </div>
   );
 };

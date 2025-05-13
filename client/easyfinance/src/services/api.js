@@ -228,3 +228,7 @@ export const fetchDefaultemis = async (clientId) => {
     throw error;
   }
 };
+
+
+export const payDefaultEmi = async (clientId, loanId, data) =>
+  API.post(`/admin/clients/${clientId}/loans/${loanId}/pay-default-emi`, data);

@@ -1040,7 +1040,7 @@ export const getDefaultEmiById = asyncHandler(async (req, res) => {
 export const payDefaultEmi = asyncHandler(async (req, res) => {
   const { clientId, loanId } = req.params;
   const {
-    emiId, // ID of the defaulted EMI
+    emiId,
     amountCollected,
     collectedBy,
     paymentMode,
@@ -1048,33 +1048,35 @@ export const payDefaultEmi = asyncHandler(async (req, res) => {
     location,
   } = req.body;
 
+  const collectedAmount = Number(amountCollected);
+  if (isNaN(collectedAmount) || collectedAmount < 0) {
+    return res.status(400).json({ message: "Invalid amount" });
+  }
+
   const client = await Client.findById(clientId);
   if (!client) return res.status(404).json({ message: "Client not found" });
 
   const loan = client.loans.id(loanId);
   if (!loan) return res.status(404).json({ message: "Loan not found" });
 
-  // 2. Create new EMI record
-  const newEmiRecord = {
+  const validatedEmi = loan.emiRecords.create({
     date: new Date(),
-    amountCollected,
+    amountCollected: collectedAmount,
     status: "Paid",
     collectedBy,
     paymentMode,
     recieverName,
     location,
-  };
-  loan.emiRecords.push(newEmiRecord);
+  });
 
-  // 3. Update loan statistics if needed
-  loan.totalCollected += amountCollected;
-  loan.totalAmountLeft = Math.max(0, loan.totalAmountLeft - amountCollected);
+  loan.emiRecords.push(validatedEmi);
+
+  loan.totalCollected += collectedAmount;
+  loan.totalAmountLeft = Math.max(0, loan.totalAmountLeft - collectedAmount);
   loan.paidEmis += 1;
   loan.updatedAt = new Date();
 
   await DefaultedEMI.findByIdAndDelete(emiId);
-
-  // 5. Save changes
   await client.save();
 
   res
