@@ -169,8 +169,12 @@ const AgentManagement = () => {
                   <thead>
                     <tr className="bg-gray-50 text-left">
                       <th className="px-6 py-3 border-b border-gray-200 text-gray-600 font-semibold">
+                        Photo
+                      </th>
+                      <th className="px-6 py-3 border-b border-gray-200 text-gray-600 font-semibold">
                         Username
                       </th>
+
                       <th className="px-6 py-3 border-b border-gray-200 text-gray-600 font-semibold">
                         Full Name
                       </th>
@@ -191,6 +195,17 @@ const AgentManagement = () => {
                         key={agent._id}
                         className="hover:bg-gray-50 transition-colors"
                       >
+                        <td className="px-6 py-4 border-b border-gray-200">
+  <img
+    src={agent.photo}
+    alt={agent.fullname}
+    className="w-10 h-10 rounded-full object-cover"
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = "https://via.placeholder.com/40";
+    }}
+  />
+</td>
                         <td className="px-6 py-4 border-b border-gray-200">
                           {agent.agentusername}
                         </td>

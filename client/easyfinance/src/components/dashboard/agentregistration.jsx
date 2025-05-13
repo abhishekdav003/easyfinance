@@ -27,7 +27,15 @@ const AgentRegisterForm = ({ onAgentAdded }) => {
     setIsSubmitting(true);
 
     try {
-      await registerAgent(formData);
+      const formPayload = new FormData();
+      formPayload.append("agentusername", formData.agentusername);
+      formPayload.append("fullname", formData.fullname);
+      formPayload.append("email", formData.email);
+      formPayload.append("fathername", formData.fathername);
+      formPayload.append("password", formData.password);
+      formPayload.append("photo", formData.photo); // File object
+
+      await registerAgent(formPayload);
 
       // Clear form
       setFormData({
@@ -135,17 +143,23 @@ const AgentRegisterForm = ({ onAgentAdded }) => {
             />
           </div>
           <div>
+          
             <label className="block text-gray-700 text-sm font-medium mb-1">
-              Photo URL
+              Upload Photo
             </label>
+            <td className="px-6 py-4 border-b border-gray-200 bg-yellow-100">
             <input
-              type="text"
+              type="file"
               name="photo"
-              value={formData.photo}
-              onChange={handleChange}
-              className="w-full border rounded p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Photo URL (optional)"
+              accept="image/*"
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  photo: e.target.files[0],
+                }))
+              }
             />
+            </td>
           </div>
         </div>
         <button

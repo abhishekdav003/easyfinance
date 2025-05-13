@@ -342,17 +342,35 @@ const DashboardOverview = ({ analytics, darkMode, transparentCharts }) => {
                 Today's Collections
               </h3>
               <button
-                onClick={exportToExcel}
-                disabled={loading || exporting || todayCollections.length === 0}
-                className={`px-3 py-1.5 text-sm rounded-lg flex items-center ${
-                  darkMode
-                    ? "bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-800/40"
-                    : "bg-blue-500 hover:bg-blue-600 text-white disabled:bg-blue-300"
-                } transition-colors disabled:cursor-not-allowed`}
-              >
-                <FileDown size={16} className="mr-1.5" />
-                {exporting ? "Exporting..." : "Export to Excel"}
-              </button>
+  onClick={exportToExcel}
+  disabled={loading || exporting || todayCollections.length === 0}
+  className={`
+    flex items-center justify-center gap-1.5
+    px-2 py-1 text-xs
+    sm:px-3 sm:py-1.5 sm:text-sm
+    md:px-4 md:py-2
+    rounded-lg
+    transition-colors
+    disabled:cursor-not-allowed
+    mr-3
+    ${
+      darkMode
+        ? "bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-800/40"
+        : "bg-yellow-500 hover:bg-green-600 text-black disabled:bg-red-500"
+    }
+  `}
+  aria-label="Export to Excel"
+>
+  <FileDown 
+    className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" 
+  />
+  <span className="hidden xs:inline">
+    {exporting ? "Exporting..." : "Export to Excel"}
+  </span>
+  <span className="xs:hidden">
+    {exporting ? "..." : "Excle Sheet ⬇"}
+  </span>
+</button>
             </div>
             <div className={`relative ${darkMode ? "text-white" : "text-gray-800"}`}>
               <input

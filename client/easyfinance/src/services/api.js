@@ -47,7 +47,12 @@ export const loginAdmin = (data) => {
 };
 
 // Agent APIs
-export const registerAgent = (data) => API.post("/admin/addagent", data);
+export const registerAgent = (formData) =>
+  API.post("/admin/addagent", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 export const registerClient = (data) => API.post("/admin/addclient", data);
 
 // ✅ Get all agents with JWT token in the Authorization header
@@ -171,6 +176,41 @@ export const getTodayCollections = async () => {
     return response.data;
   } catch (error) {
     console.error("Error fetching today's collections:", error);
+    throw error;
+  }
+};
+
+
+
+export const deleteLoan = async (clientId, loanId) => {
+  try {
+    const response = await API.delete(`/admin/deleteLoan/${clientId}/${loanId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting loan:", error);
+    throw error;
+  }
+};
+
+
+
+export const fetchAllDefaultedClients = async () => {
+  try {
+    const response = await API.get(`/admin/clients/default-emis`);
+    return response.data.data; // ✅ this accesses the nested defaultedClientsMap
+  } catch (error) {
+    console.error("Error fetching default EMI:", error);
+    throw error;
+  }
+};
+
+
+export const fetchDefaultemis = async (clientId) => {
+  try {
+    const response = await API.get(`/admin/clients/${clientId}/default-emis`);
+    return response.data.data; // ✅ access 'data' from ApiResponse
+  } catch (error) {
+    console.error("Error fetching default EMI:", error);
     throw error;
   }
 };

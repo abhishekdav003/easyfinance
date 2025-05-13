@@ -3,6 +3,8 @@ import { getAllClients } from "../../services/api"; // adjust to your API import
 import { Eye, Search, Filter, ChevronRight, ArrowLeft, X } from "lucide-react";
 import ClientLoans from "../details/ClientLoan";
 import LoanDetailsShow from "../details/LoanDetail";
+import { fetchAllDefaultedClients } from "../../services/api";
+import DefaultEmiViewer from "../details/DefaultEmiViewer"; // adjust path as needed
 
 const LoanManagementTable = () => {
   const [clients, setClients] = useState([]);
@@ -11,6 +13,10 @@ const LoanManagementTable = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedLoanId, setSelectedLoanId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [defaultedClientIds, setDefaultedClientIds] = useState({});
+  const [showDefaultEmis, setShowDefaultEmis] = useState(false);
+  const [viewingClientId, setViewingClientId] = useState(null);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -29,18 +35,32 @@ const LoanManagementTable = () => {
   }, []);
 
   useEffect(() => {
+    const fetchDefaultedClients = async () => {
+      try {
+        const data = await fetchAllDefaultedClients(); // this is an object
+        console.log("Fetched defaultedClientIds:", data);
+        setDefaultedClientIds(data); // ✅ no forEach needed!
+      } catch (err) {
+        console.error("Error fetching defaulted clients:", err);
+      }
+    };
+
+    if (clients.length > 0) {
+      fetchDefaultedClients();
+    }
+  }, [clients]);
+
+  useEffect(() => {
     // Filter clients based on search term
     if (searchTerm.trim() === "") {
       setFilteredClients(clients);
     } else {
       const term = searchTerm.toLowerCase();
       const filtered = clients.filter(
-        client =>
+        (client) =>
           client.clientName.toLowerCase().includes(term) ||
           (client.clientPhoneNumbers &&
-            client.clientPhoneNumbers.some(phone => 
-              phone.includes(term)
-            ))
+            client.clientPhoneNumbers.some((phone) => phone.includes(term)))
       );
       setFilteredClients(filtered);
     }
@@ -66,8 +86,8 @@ const LoanManagementTable = () => {
     if (selectedLoanId) {
       return (
         <div className="flex items-center text-sm text-gray-500 mb-6">
-          <button 
-            onClick={() => setSelectedLoanId(null)} 
+          <button
+            onClick={() => setSelectedLoanId(null)}
             className="hover:text-blue-600 flex items-center"
           >
             <ArrowLeft size={16} className="mr-1" />
@@ -78,44 +98,57 @@ const LoanManagementTable = () => {
         </div>
       );
     }
-    
+
     if (selectedClient) {
       return (
         <div className="flex items-center text-sm text-gray-500 mb-6">
-          <button 
-            onClick={() => setSelectedClient(null)} 
+          <button
+            onClick={() => setSelectedClient(null)}
             className="hover:text-blue-600 flex items-center"
           >
             <ArrowLeft size={16} className="mr-1" />
             Back to Clients
           </button>
           <ChevronRight size={14} className="mx-2" />
-          <span className="font-medium text-gray-700">{selectedClient.clientName}'s Loans</span>
+          <span className="font-medium text-gray-700">
+            {selectedClient.clientName}'s Loans
+          </span>
         </div>
       );
     }
-    
+
     return null;
   };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      {showDefaultEmis && viewingClientId && (
+              <DefaultEmiViewer
+                clientId={viewingClientId}
+                onClose={() => {
+                  setShowDefaultEmis(false);
+                  setViewingClientId(null);
+                }}
+              />
+            )}
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">Client Loan Management</h2>
-        
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">
+          Client Loan Management
+        </h2>
+
         {getBreadcrumbs()}
 
         {selectedLoanId ? (
           <div className="bg-white rounded-lg shadow-md">
-            <LoanDetailsShow 
-              loanId={selectedLoanId} 
-              onBack={() => setSelectedLoanId(null)} 
+            <LoanDetailsShow
+              loanId={selectedLoanId}
+              onBack={() => setSelectedLoanId(null)}
             />
           </div>
         ) : selectedClient ? (
           <div className="bg-white rounded-lg shadow-md">
-            <ClientLoans 
-              clientId={selectedClient._id} 
+            <ClientLoans
+              clientId={selectedClient._id}
               onBack={() => setSelectedClient(null)}
               onViewLoanDetails={(loanId) => setSelectedLoanId(loanId)}
             />
@@ -143,14 +176,17 @@ const LoanManagementTable = () => {
                   </button>
                 )}
               </div>
-              
+
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-sm text-gray-500">
-                  {filteredClients.length} {filteredClients.length === 1 ? 'client' : 'clients'} found
+                  {filteredClients.length}{" "}
+                  {filteredClients.length === 1 ? "client" : "clients"} found
                 </div>
                 <div className="flex items-center text-sm">
                   <Filter size={16} className="text-gray-400 mr-1" />
-                  <span className="text-gray-500">Filter options could go here</span>
+                  <span className="text-gray-500">
+                    Filter options could go here
+                  </span>
                 </div>
               </div>
             </div>
@@ -160,18 +196,34 @@ const LoanManagementTable = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead>
                     <tr className="bg-gray-100">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Client Name</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Phone Number</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">No. of Loans</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Client Name
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Phone Number
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        No. of Loans
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Actions
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Default Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredClients.length > 0 ? (
                       filteredClients.map((client) => (
-                        <tr key={client._id} className="hover:bg-gray-50 transition-colors">
+                        <tr
+                          key={client._id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
                           <td className="px-6 py-4">
-                            <div className="font-medium text-gray-900">{client.clientName}</div>
+                            <div className="font-medium text-gray-900">
+                              {client.clientName}
+                            </div>
                           </td>
                           <td className="px-6 py-4 text-gray-600">
                             {client.clientPhoneNumbers?.[0] || "—"}
@@ -190,11 +242,32 @@ const LoanManagementTable = () => {
                               View Loans
                             </button>
                           </td>
+                          <td>
+                            {defaultedClientIds[client._id] && (
+                              <div className="default-status">
+                                <p>
+                                  Status:{" "}
+                                  <span style={{ color: "red" }}>Default</span>
+                                </p>
+                                <button
+                                  onClick={() => {
+                                    setViewingClientId(client._id);
+                                    setShowDefaultEmis(true);
+                                  }}
+                                >
+                                  View
+                                </button>
+                              </div>
+                            )}
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                        <td
+                          colSpan="4"
+                          className="px-6 py-8 text-center text-gray-500"
+                        >
                           No clients found matching your search criteria
                         </td>
                       </tr>
@@ -202,12 +275,17 @@ const LoanManagementTable = () => {
                   </tbody>
                 </table>
               </div>
-              
+             
               {filteredClients.length > 10 && (
                 <div className="bg-white px-6 py-4 border-t border-gray-200">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-500">
-                      Showing <span className="font-medium">1</span> to <span className="font-medium">10</span> of <span className="font-medium">{filteredClients.length}</span> clients
+                      Showing <span className="font-medium">1</span> to{" "}
+                      <span className="font-medium">10</span> of{" "}
+                      <span className="font-medium">
+                        {filteredClients.length}
+                      </span>{" "}
+                      clients
                     </div>
                     <div className="flex items-center space-x-2">
                       <button className="px-3 py-1 border border-gray-300 rounded-md bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50">

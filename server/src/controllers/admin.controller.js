@@ -5,10 +5,11 @@ import { ApiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudnary.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import Client from "../models/client.loan.model.js";
+import { DefaultedEMI } from "../models/client.loan.model.js";
 import { Loan } from "../models/client.loan.model.js";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 import twilio from "twilio";
-import isSameDay from 'date-fns/isSameDay';
+import isSameDay from "date-fns/isSameDay";
 
 const generateAccessAndRefrshToken = async (adminId) => {
   try {
@@ -300,7 +301,9 @@ export const addClient = asyncHandler(async (req, res) => {
 
     let emiAmount = 0;
     if (emiType === "Daily") {
-      emiAmount = totalTenureDays ? totalPayable / totalTenureDays : totalPayable;
+      emiAmount = totalTenureDays
+        ? totalPayable / totalTenureDays
+        : totalPayable;
     } else if (emiType === "Weekly") {
       const weeks = Math.ceil(totalTenureDays / 7) || 1;
       emiAmount = totalPayable / weeks;
@@ -357,13 +360,15 @@ export const addClient = asyncHandler(async (req, res) => {
   return res
     .status(201)
     .json(
-      new ApiResponse(201, { newClient }, "Client and loan(s) added successfully")
+      new ApiResponse(
+        201,
+        { newClient },
+        "Client and loan(s) added successfully"
+      )
     );
 });
 
-
-
-// update client details 
+// update client details
 export const updatedClient = asyncHandler(async (req, res) => {
   const { clientId } = req.params;
   const {
@@ -373,7 +378,7 @@ export const updatedClient = asyncHandler(async (req, res) => {
     permanentAddress,
     shopAddress,
     houseAddress,
-    email
+    email,
   } = req.body;
 
   const updatedClient = await Client.findByIdAndUpdate(
@@ -385,7 +390,7 @@ export const updatedClient = asyncHandler(async (req, res) => {
       permanentAddress,
       shopAddress,
       houseAddress,
-      email
+      email,
     },
     { new: true }
   );
@@ -399,7 +404,6 @@ export const updatedClient = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedClient, "Client updated successfully"));
 });
 
-
 //remove a client
 
 export const removeClient = asyncHandler(async (req, res) => {
@@ -409,16 +413,15 @@ export const removeClient = asyncHandler(async (req, res) => {
   if (!client) {
     throw new ApiError(404, "Client not found");
   }
-  
+
   await Client.findByIdAndDelete(clientId);
 
   return res
     .status(200)
     .json(new ApiResponse(200, {}, "Client removed successfully"));
-})
+});
 
-
-// get a agent details 
+// get a agent details
 export const agentDetails = asyncHandler(async (req, res) => {
   const { agentId } = req.params;
 
@@ -430,12 +433,11 @@ export const agentDetails = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, agent, "Agent details fetched successfully"));
-})
+});
 
-
-// show all clients 
+// show all clients
 export const clientList = asyncHandler(async (req, res) => {
-  const clients = await Client.find()
+  const clients = await Client.find();
   return res.status(200).json(new ApiResponse(200, clients, "client list"));
 });
 
@@ -468,9 +470,13 @@ export const loanDetails = asyncHandler(async (req, res) => {
   const startDate = new Date(rawLoan.startDate);
 
   if (rawLoan.emiType === "Daily") {
-    nextEmiDate = new Date(startDate.getTime() + (paidEmis + 1) * 24 * 60 * 60 * 1000);
+    nextEmiDate = new Date(
+      startDate.getTime() + (paidEmis + 1) * 24 * 60 * 60 * 1000
+    );
   } else if (rawLoan.emiType === "Weekly") {
-    nextEmiDate = new Date(startDate.getTime() + (paidEmis + 1) * 7 * 24 * 60 * 60 * 1000);
+    nextEmiDate = new Date(
+      startDate.getTime() + (paidEmis + 1) * 7 * 24 * 60 * 60 * 1000
+    );
   } else if (rawLoan.emiType === "Monthly") {
     const next = new Date(startDate);
     next.setMonth(next.getMonth() + paidEmis + 1);
@@ -494,15 +500,13 @@ export const loanDetails = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, rawLoan, "Loan details fetched successfully"));
 });
 
-
-
-
-//show client details with all details 
+//show client details with all details
 export const clientDetails = asyncHandler(async (req, res) => {
- const {clientId} = req.params
- const client = await Client.findById(clientId).populate("loans");
- return res.status(200).json(new ApiResponse(200, client, "client details fetched successfully"));
-
+  const { clientId } = req.params;
+  const client = await Client.findById(clientId).populate("loans");
+  return res
+    .status(200)
+    .json(new ApiResponse(200, client, "client details fetched successfully"));
 });
 
 // fetch all loans
@@ -510,7 +514,9 @@ export const loanList = asyncHandler(async (req, res) => {
   const { clientId } = req.params;
 
   if (!clientId) {
-    return res.status(400).json(new ApiResponse(400, null, "Client ID is required"));
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Client ID is required"));
   }
 
   const client = await Client.findById(clientId);
@@ -520,10 +526,14 @@ export const loanList = asyncHandler(async (req, res) => {
   }
 
   // Now send client's loans array
-  return res.status(200).json(new ApiResponse(200, client.loans, "Client loans fetched successfully"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, client.loans, "Client loans fetched successfully")
+    );
 });
 
-//add new loan object to the client array to client 
+//add new loan object to the client array to client
 export const addLoanToClient = asyncHandler(async (req, res) => {
   const { clientId } = req.params;
   const { loans } = req.body;
@@ -550,19 +560,24 @@ export const addLoanToClient = asyncHandler(async (req, res) => {
       tenureDays,
       tenureMonths,
       emiType,
-      startDate: rawStartDate
+      startDate: rawStartDate,
     } = loanData;
 
     const start = rawStartDate ? new Date(rawStartDate) : new Date();
     let dueDate;
 
     if (tenureDays) {
-      dueDate = new Date(start.getTime() + Number(tenureDays) * 24 * 60 * 60 * 1000);
+      dueDate = new Date(
+        start.getTime() + Number(tenureDays) * 24 * 60 * 60 * 1000
+      );
     } else if (tenureMonths) {
       dueDate = new Date(start);
       dueDate.setMonth(dueDate.getMonth() + Number(tenureMonths));
     } else {
-      throw new ApiError(400, "Either tenureDays or tenureMonths must be provided");
+      throw new ApiError(
+        400,
+        "Either tenureDays or tenureMonths must be provided"
+      );
     }
 
     const interest = (loanAmount * interestRate) / 100;
@@ -601,7 +616,7 @@ export const addLoanToClient = asyncHandler(async (req, res) => {
       status: "Ongoing",
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: creatorId // ✅ Required field
+      createdBy: creatorId, // ✅ Required field
     };
 
     client.loans.push(newLoan);
@@ -609,15 +624,15 @@ export const addLoanToClient = asyncHandler(async (req, res) => {
 
   await client.save();
 
-  return res.status(201).json(new ApiResponse(201, client, "Loan(s) added successfully"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, client, "Loan(s) added successfully"));
 });
-
-
 
 //remove loan once completed
 export const removeLoanFromClient = asyncHandler(async (req, res) => {
   const { clientId, loanId } = req.params;
-console.log(clientId , loanId);
+  console.log(clientId, loanId);
 
   const client = await Client.findById(clientId);
   const loanExists = client.loans.id(loanId);
@@ -629,17 +644,17 @@ console.log(clientId , loanId);
   if (!client) {
     throw new ApiError(404, "Client not found");
   }
-  
+
   client.loans.pull(loanId);
   await client.save();
   return res
     .status(200)
-    .json(new ApiResponse(200, client, "Loan removed from client successfully"));
+    .json(
+      new ApiResponse(200, client, "Loan removed from client successfully")
+    );
+});
 
-})
-
-
-// get analatics admin view 
+// get analatics admin view
 export const getAdminDashboardAnalytics = asyncHandler(async (req, res) => {
   const clients = await Client.find();
 
@@ -648,15 +663,13 @@ export const getAdminDashboardAnalytics = asyncHandler(async (req, res) => {
   let totalAmountRemaining = 0;
   let totalEmisCollected = 0;
   let defaulterCount = 0;
-  
 
-
-  clients.forEach(client => {
-    client.loans.forEach(loan => {
+  clients.forEach((client) => {
+    client.loans.forEach((loan) => {
       totalLoanDisbursed += loan.loanAmount;
       totalAmountRemaining += loan.totalAmountLeft;
 
-      loan.emiRecords.forEach(emi => {
+      loan.emiRecords.forEach((emi) => {
         totalEmisCollected += 1;
 
         if (emi.status === "Paid") {
@@ -669,28 +682,35 @@ export const getAdminDashboardAnalytics = asyncHandler(async (req, res) => {
   });
 
   return res.status(200).json(
-    new ApiResponse(200, {
-      totalLoanDisbursed,
-      totalAmountRecovered,
-      totalAmountRemaining,
-      totalEmisCollected,
-      defaulterCount,
-    }, "Admin dashboard analytics fetched successfully")
+    new ApiResponse(
+      200,
+      {
+        totalLoanDisbursed,
+        totalAmountRecovered,
+        totalAmountRemaining,
+        totalEmisCollected,
+        defaulterCount,
+      },
+      "Admin dashboard analytics fetched successfully"
+    )
   );
 });
 
-
 //emi collection api and send message on wats app with current location of agent where he/she collected emi
-const clientTwilio = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
-const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM
-const toAdminNumber = process.env.ADMIN_WHATSAPP_TO
+const clientTwilio = twilio(
+  process.env.TWILIO_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
+const fromWhatsAppNumber = process.env.TWILIO_WHATSAPP_FROM;
+const toAdminNumber = process.env.ADMIN_WHATSAPP_TO;
 export const collectEMI = asyncHandler(async (req, res) => {
   const { clientId, loanId } = req.params;
-  const { amountCollected, status, location, paymentMode ,recieverName  } = req.body;  // Destructure paymentMode from request body
+  const { amountCollected, status, location, paymentMode, recieverName } =
+    req.body;
   const adminId = req.admin._id;
 
-  console.log("🔁 collectEMI params:", req.params);
-  console.log("📦 collectEMI body:", req.body);
+  // console.log("🔁 collectEMI params:", req.params);
+  // console.log("📦 collectEMI body:", req.body);
 
   const client = await Client.findById(clientId);
   if (!client) throw new ApiError(404, "Client not found");
@@ -698,63 +718,95 @@ export const collectEMI = asyncHandler(async (req, res) => {
   const loan = client.loans.id(loanId);
   if (!loan) throw new ApiError(404, "Loan not found");
 
-  // Normalize status to match enum
+  const today = new Date();
+
+  // Normalize status
   const allowedStatuses = ["Paid", "Defaulted"];
   const normalizedStatus = allowedStatuses.includes(status) ? status : "Paid";
 
-  // ✅ Check if EMI already collected today
-  const today = new Date();
-  const alreadyCollectedToday = loan.emiRecords.some(record =>
-    isSameDay(new Date(record.date), today)
-  );
+  const emiAmount = loan.emiAmount;
+  const numberOfEmisPaid = Math.floor(amountCollected / emiAmount);
+  console.log("normalizedStatus", normalizedStatus);
 
-  // Uncomment if you want to prevent multiple collections in a day
-  // if (alreadyCollectedToday) {
-  //   throw new ApiError(400, "EMI already collected for today.");
-  // }
+  // Push individual EMI records
+  for (let i = 0; i < numberOfEmisPaid; i++) {
+    let emiDate = new Date(today);
 
-  const emiEntry = {
-    date: today,
-    amountCollected,
-    status: normalizedStatus,
-    collectedBy: adminId,
-    location,
-    paymentMode,
-    recieverName
-      // Add paymentMode to EMI entry
-  };
+    if (loan.emiType === "Daily") {
+      emiDate.setDate(today.getDate() + i);
+    } else if (loan.emiType === "Weekly") {
+      emiDate.setDate(today.getDate() + i * 7);
+    } else if (loan.emiType === "Monthly") {
+      emiDate.setMonth(today.getMonth() + i);
+    }
 
-  loan.emiRecords.push(emiEntry);
+    if (normalizedStatus === "Paid") {
+      loan.emiRecords.push({
+        date: emiDate,
+        amountCollected: emiAmount,
+        status: normalizedStatus,
+        collectedBy: adminId,
+        location,
+        paymentMode,
+        recieverName,
+      });
+    } else {
+      const defaultedEmi = new DefaultedEMI({
+        date: emiDate,
+        clientId,
+        loanId,
+        location,
+        recordedBy: adminId,
+        reason: "Marked Default", // optionally add more info
+      });
+      await defaultedEmi.save();
+    }
+
+    console.log("hi");
+
+    // ✅ If Defaulted, also log in loan.defaultedEmis
+    //  if (normalizedStatus === "Defaulted") {
+
+    // }
+  }
+
+  // Total collected and remaining
   loan.totalCollected += amountCollected;
   loan.totalAmountLeft = loan.totalPayable - loan.totalCollected;
   loan.updatedAt = new Date();
 
-  // Calculate computed fields
-  loan.paidEmis = loan.emiRecords.filter(e => e.status === "Paid").length;
+  // ✅ Recalculate paid EMIs
+  loan.paidEmis = loan.emiRecords.filter((e) => e.status === "Paid").length;
 
-  const totalEmis = loan.tenureMonths ?? loan.tenureDays ?? 0;
-  loan.totalEmis = totalEmis;
+  // ✅ Update next EMI date
+  if (numberOfEmisPaid > 0) {
+    let baseDate = loan.nextEmiDate
+      ? new Date(loan.nextEmiDate)
+      : new Date(loan.startDate);
 
-  const nextDate = new Date();
-  if (loan.emiType === "Monthly") nextDate.setMonth(nextDate.getMonth() + 1);
-  else if (loan.emiType === "Weekly") nextDate.setDate(nextDate.getDate() + 7);
-  else if (loan.emiType === "Daily") nextDate.setDate(nextDate.getDate() + 1);
-  loan.nextEmiDate = nextDate;
+    if (loan.emiType === "Daily") {
+      baseDate.setDate(baseDate.getDate() + numberOfEmisPaid);
+    } else if (loan.emiType === "Weekly") {
+      baseDate.setDate(baseDate.getDate() + numberOfEmisPaid * 7);
+    } else if (loan.emiType === "Monthly") {
+      baseDate.setMonth(baseDate.getMonth() + numberOfEmisPaid);
+    }
 
+    loan.nextEmiDate = baseDate;
+  }
+
+  // Total EMIs & Interest
+  loan.totalEmis = loan.tenureMonths ?? loan.tenureDays ?? 0;
   loan.totalInterest = loan.totalPayable - loan.loanAmount;
   loan.totalRepayment = loan.totalPayable;
 
-  // ✅ Important: tell Mongoose we modified the subdocument
-  client.markModified('loans');
+  client.markModified("loans");
   await client.save();
 
   const updatedLoan = client.loans.id(loanId);
   const admin = await Admin.findById(adminId);
 
-  console.log("EMI status received:", normalizedStatus);
-  console.log("All EMIs:", loan.emiRecords.map(e => e.status));
-  console.log("Paid EMIs:", loan.emiRecords.filter(e => e.status === "Paid").length);
-
+  // 📲 WhatsApp Notification
   if (normalizedStatus === "Defaulted") {
     const messageBody = `⚠️ *EMI Default Alert!*\n\n📛 *Client:* ${client.clientName}\n💰 *Amount Due:* ₹${amountCollected}\n🕒 *Recorded At:* ${today.toLocaleString()}\n👨‍💼 *Updated By:* ${admin.username}\n\n🚨 Please take necessary action.`;
 
@@ -766,7 +818,7 @@ export const collectEMI = asyncHandler(async (req, res) => {
   } else {
     const [lng, lat] = location.coordinates;
     const googleMapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
-    const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${googleMapsLink}\n🙋‍♂️ *Collected By:* ${admin.username}\n💳 *Payment Mode:* ${paymentMode}`;  // Include Payment Mode
+    const messageBody = `📢 *EMI Collected!*\n👤 *Client:* ${client.clientName}\n💸 *Amount:* ₹${amountCollected}\n🕒 *Time:* ${today.toLocaleString()}\n📍 *Location:* ${googleMapsLink}\n🙋‍♂️ *Collected By:* ${admin.username}\n💳 *Payment Mode:* ${paymentMode}`;
 
     await clientTwilio.messages.create({
       from: fromWhatsAppNumber,
@@ -775,13 +827,18 @@ export const collectEMI = asyncHandler(async (req, res) => {
     });
   }
 
-  res.status(200).json(new ApiResponse(200, updatedLoan, "EMI collected and recorded successfully"));
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatedLoan,
+        "EMI collected and recorded successfully"
+      )
+    );
 });
 
-
-
-
-//view emi collection history 
+//view emi collection history
 export const viewEmiCollectionHistory = asyncHandler(async (req, res) => {
   const { clientId, loanId } = req.params;
   const client = await Client.findById(clientId);
@@ -794,31 +851,36 @@ export const viewEmiCollectionHistory = asyncHandler(async (req, res) => {
     throw new ApiError(404, "No EMI collection history found");
   }
 
-  res.status(200).json(new ApiResponse(200, loan.emiRecords, "EMI collection history retrieved successfully"));
-
-
-})
-
-
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        loan.emiRecords,
+        "EMI collection history retrieved successfully"
+      )
+    );
+});
 
 // get emi collection data of particular agent
 export const getEmiCollectionData = asyncHandler(async (req, res) => {
-  const { agentId } = req.params;  // agentId from the request params
+  const { agentId } = req.params; // agentId from the request params
 
   // Fetch clients who have any EMI records collected by the specified agent
   const clients = await Client.find({
-    "loans.emiRecords.collectedBy": agentId,  // Ensure we check EMI records collected by this agent
+    "loans.emiRecords.collectedBy": agentId, // Ensure we check EMI records collected by this agent
   });
 
-  if (!clients.length) throw new ApiError(404, "No EMI collection data found for this agent");
+  if (!clients.length)
+    throw new ApiError(404, "No EMI collection data found for this agent");
 
   const emiCollectionData = [];
   let totalCollected = 0;
 
   // Iterate through each client and their loans, and collect EMI data that matches the agentId
-  clients.forEach(client => {
-    client.loans.forEach(loan => {
-      loan.emiRecords.forEach(emi => {
+  clients.forEach((client) => {
+    client.loans.forEach((loan) => {
+      loan.emiRecords.forEach((emi) => {
         // Check if the EMI was collected by the specified agent
         if (emi.collectedBy?.toString() === agentId) {
           emiCollectionData.push({
@@ -829,7 +891,7 @@ export const getEmiCollectionData = asyncHandler(async (req, res) => {
             status: emi.status,
             location: emi.location,
           });
-          totalCollected += emi.amountCollected;  // Keep track of the total collected amount
+          totalCollected += emi.amountCollected; // Keep track of the total collected amount
         }
       });
     });
@@ -837,21 +899,22 @@ export const getEmiCollectionData = asyncHandler(async (req, res) => {
 
   // Send response with total collected and EMI records collected by this agent
   res.status(200).json(
-    new ApiResponse(200, {
-      totalCollected,
-      emiCollectionData,
-    }, "EMI collection data retrieved successfully for the agent")
+    new ApiResponse(
+      200,
+      {
+        totalCollected,
+        emiCollectionData,
+      },
+      "EMI collection data retrieved successfully for the agent"
+    )
   );
 });
 
-
-
-// loan status 
+// loan status
 export const updateLoanStatus = asyncHandler(async (req, res) => {
   const allowedStatuses = ["Ongoing", "Completed"];
   const { clientId, loanId } = req.params;
   const newstatus = req.body.newstatus || req.body.status;
-
 
   if (!allowedStatuses.includes(newstatus))
     throw new ApiError(400, "Invalid status value");
@@ -866,65 +929,150 @@ export const updateLoanStatus = asyncHandler(async (req, res) => {
 
   await client.save(); // Save the parent document
 
-  res.status(200).json(new ApiResponse(200, loan, "Loan status updated successfully"));
+  res
+    .status(200)
+    .json(new ApiResponse(200, loan, "Loan status updated successfully"));
 });
 
-
-
-
-
- 
 export const TodayCollection = asyncHandler(async (req, res) => {
- 
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Set to start of the day
-    
+
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  
+
   // Fetch client data with today's EMI records
   const clients = await Client.find({
     "loans.emiRecords.date": {
       $gte: today,
-      $lt: tomorrow
-    }
+      $lt: tomorrow,
+    },
   }).populate({
-    path: 'loans.emiRecords.collectedBy',
-    model: 'Agent',
-    select: 'fullname'
+    path: "loans.emiRecords.collectedBy",
+    model: "Agent",
+    select: "fullname",
   });
   const todayCollections = [];
-    
-    for (const client of clients) {
-      for (const loan of client.loans) {
-        for (const emi of loan.emiRecords) {
-          // Check if the EMI was collected today
-          const emiDate = new Date(emi.date);
-          if (emiDate >= today && emiDate < tomorrow) {
-            // Find the agent who collected this EMI
-            let agentName = "Admin";
-            if (emi.collectedBy) {
-              agentName = emi.collectedBy.fullname;
-            }
-            
-            // Add formatted collection data
-            todayCollections.push({
-              clientName: client.clientName,
-              loanNumber: loan.uniqueLoanNumber,
-              amountCollected: emi.amountCollected,
-              status: emi.status,
-              paymentMode: emi.paymentMode,
-              agentName: agentName,
-              date: emi.date,
-              location: emi.location,
-              recieverName: emi?.recieverName || "Cash Payment"
-            });
+
+  for (const client of clients) {
+    for (const loan of client.loans) {
+      for (const emi of loan.emiRecords) {
+        // Check if the EMI was collected today
+        const emiDate = new Date(emi.date);
+        if (emiDate >= today && emiDate < tomorrow) {
+          // Find the agent who collected this EMI
+          let agentName = "Admin";
+          if (emi.collectedBy) {
+            agentName = emi.collectedBy.fullname;
           }
+
+          // Add formatted collection data
+          todayCollections.push({
+            clientName: client.clientName,
+            loanNumber: loan.uniqueLoanNumber,
+            amountCollected: emi.amountCollected,
+            status: emi.status,
+            paymentMode: emi.paymentMode,
+            agentName: agentName,
+            date: emi.date,
+            location: emi.location,
+            recieverName: emi?.recieverName || "Cash Payment",
+          });
         }
       }
     }
+  }
 
-    todayCollections.sort((a, b) => new Date(b.date) - new Date(a.date));
-    res.status(200).json(new ApiResponse(200, todayCollections, "Today's collection data retrieved successfully"));
+  todayCollections.sort((a, b) => new Date(b.date) - new Date(a.date));
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        todayCollections,
+        "Today's collection data retrieved successfully"
+      )
+    );
+});
 
-})
+// get default emi data
+
+export const getDefaultEmi = asyncHandler(async (req, res) => {
+  const defaultEmis = await DefaultedEMI.find();
+    
+  const defaultedClientsMap = defaultEmis.reduce((acc, emi) => {
+    acc[emi.clientId.toString()] = true;
+    return acc;
+  }, {});
+
+  res.status(200).json(new ApiResponse(
+    200,
+    defaultedClientsMap,
+    "All defaulted client EMIs fetched successfully"
+  ));
+});
+
+
+
+// get default emi by id of client 
+
+export const getDefaultEmiById = asyncHandler(async (req, res) => {
+  const { clientId } = req.params;
+
+  const defaultEmis = await DefaultedEMI.find({ clientId }); // ✅ match actual field name
+  
+  res.status(200).json(new ApiResponse(
+    200,
+    defaultEmis,
+    "All defaulted client EMIs fetched successfully"
+  ));
+});
+
+
+
+// pay default emi
+
+export const payDefaultEmi = asyncHandler(async (req, res) => {
+  const { clientId, loanId } = req.params;
+  const {
+    emiId, // ID of the defaulted EMI
+    amountCollected,
+    collectedBy,
+    paymentMode,
+    recieverName,
+    location,
+  } = req.body;
+
+  const client = await Client.findById(clientId);
+  if (!client) return res.status(404).json({ message: "Client not found" });
+
+  const loan = client.loans.id(loanId);
+  if (!loan) return res.status(404).json({ message: "Loan not found" });
+
+  // 2. Create new EMI record
+  const newEmiRecord = {
+    date: new Date(),
+    amountCollected,
+    status: "Paid",
+    collectedBy,
+    paymentMode,
+    recieverName,
+    location,
+  };
+  loan.emiRecords.push(newEmiRecord);
+
+  // 3. Update loan statistics if needed
+  loan.totalCollected += amountCollected;
+  loan.totalAmountLeft = Math.max(0, loan.totalAmountLeft - amountCollected);
+  loan.paidEmis += 1;
+  loan.updatedAt = new Date();
+
+  await DefaultedEMI.findByIdAndDelete(emiId);
+
+  // 5. Save changes
+  await client.save();
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, loan, "Default EMI paid successfully"));
+});
