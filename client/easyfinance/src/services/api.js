@@ -22,6 +22,20 @@ export const registerAdmin = (data) => API.post("/admin/register", data);
 
 
 
+export const requestPasswordReset = async (data) => {
+  return await axios.post(`${API}/auth/request-password-reset`, data);
+};
+
+export const verifyOTP = async (data) => {
+  return await axios.post(`${API}/auth/verify-otp`, data);
+};
+
+export const resetPassword = async (data) => {
+  return await axios.post(`${API}/auth/reset-password`, data);
+};
+
+
+
 
 // import API from 'your-api-instance'; // Ajust to your API setup
 

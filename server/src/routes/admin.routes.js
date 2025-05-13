@@ -28,7 +28,29 @@ import {
 import { verifyAdminJwt } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
+// Import the password reset controller functions
+import {
+  requestPasswordReset,
+  verifyOTP,
+  resetPassword,
+} from "../controllers/auth.controller.js"; // Create this file or update your existing one
+
+
 const router = Router();
+
+// Public auth routes
+router.route("/register").post(upload.single("profileImage"), registerAdmin);
+router.route("/login").post(adminLogin);
+
+// Password reset routes (public)
+router.route("/request-password-reset").post(requestPasswordReset);
+router.route("/verify-otp").post(verifyOTP);
+router.route("/reset-password").post(resetPassword);
+
+// Agent management
+router.route("/addagent").post(upload.single("photo"), addAgent);
+
+// Secured routes
 
 router.route("/register").post(upload.single("profileImage"), registerAdmin);
 router.route("/login").post(adminLogin);
@@ -36,6 +58,7 @@ router.route("/login").post(adminLogin);
 router.route("/addagent").post(upload.single("photo"), addAgent);
 
 // secured routes
+
 //logout admin ✅
 router.route("/logout").post(verifyAdminJwt, logoutAdmin);
 
@@ -55,7 +78,11 @@ router.route("/viewclientloan/:clientId/loans").get(loanList);
 
 // admin remove loan
 router
+
+  .route("/removeloan/:clientId/loans/:loanId")
+
   .route("/deleteLoan/:clientId/:loanId")
+
   .delete(verifyAdminJwt, removeLoanFromClient);
 
 // admin get client all details ✅
@@ -70,7 +97,6 @@ router.route("/allclients").get(verifyAdminJwt, clientList);
 // admin get agent all details
 router.route("/getagentdetails/:agentId").get(verifyAdminJwt, agentDetails);
 
-// router.route("/getClientdetails/:agentId").get(verifyAdminJwt , clientDetails)
 
 // admin get dashboard analytics ✅
 router.route("/dashboard").get(verifyAdminJwt, getAdminDashboardAnalytics);
@@ -99,6 +125,11 @@ router
   .route("/viewEmiCollectionHistory/:clientId/:loanId")
   .get(verifyAdminJwt, viewEmiCollectionHistory);
 
+
+router
+  .route("/viewEmiCollectionHistory/:clientId/:loanId")
+  .get(verifyAdminJwt, viewEmiCollectionHistory);
+
 router
   .route("/getEmiCollection/:agentId")
   .get(verifyAdminJwt, getEmiCollectionData);
@@ -120,7 +151,6 @@ router
 router
   .route("/clients/:clientId/default-emis")
   .get(verifyAdminJwt, getDefaultEmiById);
-
 
 // pay defualted emi of a loan 
 
