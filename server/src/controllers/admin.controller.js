@@ -1020,7 +1020,7 @@ export const getDefaultEmiById = asyncHandler(async (req, res) => {
   const { clientId } = req.params;
 
   const defaultEmis = await DefaultedEMI.find({ clientId })
-  .populate("clientId", "name");
+  .populate("clientId", "clientName");
   
   res.status(200).json(new ApiResponse(
     200,

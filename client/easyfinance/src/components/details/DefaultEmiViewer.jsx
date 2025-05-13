@@ -55,7 +55,7 @@ const DefaultEmiViewer = ({ clientId, onClose }) => {
           <tbody>
             {emis.map((emi) => (
               <tr key={emi._id} className="border-t">
-                <td className="px-4 py-2">{emi.clientId?.name || "Unknown"}</td>{" "}
+                <td className="px-4 py-2">{emi.clientId?.clientName || "Unknown"}</td>
                 {/* 🆕 */}
                 <td className="px-4 py-2">{emi.amount}</td>
                 <td className="px-4 py-2">
