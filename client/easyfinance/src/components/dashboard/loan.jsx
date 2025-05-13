@@ -242,24 +242,31 @@ const LoanManagementTable = () => {
                               View Loans
                             </button>
                           </td>
-                          <td>
-                            {defaultedClientIds[client._id] && (
-                              <div className="default-status">
-                                <p>
-                                  Status:{" "}
-                                  <span style={{ color: "red" }}>Default</span>
-                                </p>
-                                <button
-                                  onClick={() => {
-                                    setViewingClientId(client._id);
-                                    setShowDefaultEmis(true);
-                                  }}
-                                >
-                                  View
-                                </button>
-                              </div>
-                            )}
-                          </td>
+                          <td className="px-6 py-4">
+  {defaultedClientIds[client._id] ? (
+    <div className="flex flex-col space-y-2">
+      <div className="flex items-center">
+        <span className="text-sm font-medium mr-2">Status:</span>
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Default
+        </span>
+      </div>
+      <button
+        onClick={() => {
+          setViewingClientId(client._id);
+          setShowDefaultEmis(true);
+        }}
+        className="inline-flex items-center justify-center px-3 py-1.5 bg-gray-50 border border-gray-200 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-colors shadow-sm text-xs font-medium w-24"
+      >
+        View Details
+      </button>
+    </div>
+  ) : (
+    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+      Good Standing
+    </span>
+  )}
+</td>
                         </tr>
                       ))
                     ) : (
