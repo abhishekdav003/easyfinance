@@ -12,6 +12,9 @@ const transporter = nodemailer.createTransport({
     user: config.email.user,
     pass: config.email.password,
   },
+  tls: {
+    rejectUnauthorized: false, // <-- This allows self-signed certs; use only in development
+  },
 });
 
 // Verify connection configuration on service start
